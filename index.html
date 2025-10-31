@@ -4055,7 +4055,7 @@
                 }
             }
             
-            // 載入組別列表
+            // 修復：載入組別列表 - 確保每個車廂獨立載入
             async function loadGroupList(cabin) {
                 try {
                     const cabinNumber = cabin.fields.sequence;
@@ -4065,6 +4065,9 @@
                         console.error('找不到組別列表容器');
                         return;
                     }
+                    
+                    // 添加車廂標識到組別列表容器，確保每個車廂的組別列表獨立
+                    groupList.setAttribute('data-cabin-number', cabinNumber);
                     
                     groupList.innerHTML = '<div style="padding: 10px; text-align: center; color: #666;">載入中...</div>';
                     
@@ -4081,6 +4084,12 @@
                         .get();
                     
                     console.log('找到', snapshot.size, '個組別');
+                    
+                    // 修復：檢查當前組別列表是否仍然是同一個車廂（防止異步載入時車廂已切換）
+                    if (groupList.getAttribute('data-cabin-number') !== cabinNumber) {
+                        console.log('車廂已切換，取消載入組別列表');
+                        return;
+                    }
                     
                     if (snapshot.empty) {
                         groupList.innerHTML = '<div style="padding: 10px; text-align: center; color: #666;">此車廂暫無組別記錄</div>';
@@ -4312,7 +4321,7 @@
                 } finally {
                     hideLoader();
                 }
-            };
+            }
             
             // 生成地圖QR碼
             function generateMapQRCode() {
