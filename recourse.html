@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>求助記錄系統</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <style>
+        :root {
+            --primary: #4285F4;
+            --secondary: #34A853;
+            --danger: #EA4335;
+            --warning: #FBBC05;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --light-blue: #e3f2fd;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), #1a73e8);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+        
+        .logo-icon {
+            font-size: 1.8rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            padding: 30px;
+            margin: 30px 0;
+            animation: fadeIn 0.5s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        h2 i {
+            background: var(--light-blue);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 1.1rem;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e1e5eb;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn:hover {
+            background: #1a73e8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+        }
+        
+        .btn-secondary:hover {
+            background: #2d8d4e;
+            box-shadow: 0 4px 12px rgba(52, 168, 83, 0.3);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: #d33426;
+            box-shadow: 0 4px 12px rgba(234, 67, 53, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--secondary);
+        }
+        
+        .btn-success:hover {
+            background: #2d8d4e;
+            box-shadow: 0 4px 12px rgba(52, 168, 83, 0.3);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+        
+        .message {
+            padding: 18px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .message-success {
+            background: #e6f4ea;
+            color: var(--secondary);
+            border: 1px solid #c8e6c9;
+        }
+        
+        .message-error {
+            background: #fce8e6;
+            color: var(--danger);
+            border: 1px solid #ffcdd2;
+        }
+        
+        .message-info {
+            background: #e8f0fe;
+            color: var(--primary);
+            border: 1px solid #bbdefb;
+        }
+        
+        .record-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 30px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .record-table th {
+            background: var(--primary);
+            color: white;
+            text-align: left;
+            padding: 16px;
+            font-weight: 600;
+        }
+        
+        .record-table td {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+        
+        .record-table tr:nth-child(even) td {
+            background: #f9fbfd;
+        }
+        
+        .record-table tr:hover td {
+            background: #f1f7ff;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .status-complete {
+            background: #e6f4ea;
+            color: var(--secondary);
+        }
+        
+        .status-pending {
+            background: #fef7e0;
+            color: var(--warning);
+        }
+        
+        .status-processed {
+            background: #e3f2fd;
+            color: var(--primary);
+        }
+        
+        .contact-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .contact-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f5f5f5;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .contact-btn:hover {
+            background: #e9e9e9;
+        }
+        
+        .contact-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .duplicate-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+        }
+        
+        .duplicate-list {
+            max-height: 150px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #e1e5eb;
+            border-radius: 5px;
+            padding: 8px;
+        }
+        
+        .comparison-results {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .comparison-item {
+            padding: 15px;
+            border: 1px solid #e1e5eb;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .comparison-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .match-level {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .match-high {
+            background: #e6f4ea;
+            color: var(--secondary);
+        }
+        
+        .match-medium {
+            background: #fef7e0;
+            color: var(--warning);
+        }
+        
+        .match-low {
+            background: #fce8e6;
+            color: var(--danger);
+        }
+        
+        .comparison-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .comparison-field {
+            margin-bottom: 8px;
+        }
+        
+        .field-label {
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .field-match {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+        
+        .match-true {
+            background-color: var(--secondary);
+        }
+        
+        .match-false {
+            background-color: var(--danger);
+        }
+        
+        .comparison-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--gray);
+            padding: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e1e5eb;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom: 3px solid var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+        
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .label {
+            font-size: 1.1rem;
+            color: var(--gray);
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            flex: 1;
+        }
+        
+        .health-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .health-stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .health-stat-card .number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .health-stat-card.green { border-left: 5px solid #34A853; }
+        .health-stat-card.yellow { border-left: 5px solid #FBBC05; }
+        .health-stat-card.red { border-left: 5px solid #EA4335; }
+        .health-stat-card.black { border-left: 5px solid #5f6368; }
+        
+        .other-source-input {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .comparison-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .record-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-box {
+                flex-direction: column;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🚠</span>
+                    <span>求助記錄系統</span>
+                </div>
+                <div style="font-size: 0.9rem; opacity: 0.9;">
+                    獨立數據存儲，不影響主系統記錄
+                </div>
+            </div>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="record">記錄錄入</div>
+            <div class="tab" data-tab="records">記錄查看</div>
+            <div class="tab" data-tab="dashboard">數據統計</div>
+        </div>
+        
+        <!-- 記錄錄入標籤頁 -->
+        <div id="record-tab" class="tab-content active">
+            <div class="section">
+                <h2><i class="fas fa-plus-circle"></i> 記錄錄入</h2>
+                <div id="message" class="message"></div>
+                
+                <div class="card">
+                    <div class="form-group">
+                        <label for="cabinNumber"><i class="fas fa-train"></i> 車廂號碼</label>
+                        <input type="text" id="cabinNumber" placeholder="1-125">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="guestName"><i class="fas fa-user"></i> 賓客姓名</label>
+                        <input type="text" id="guestName" placeholder="請輸入賓客全名">
+                        <div style="margin-top: 8px;">
+                            <button type="button" class="btn" style="padding: 8px 12px; font-size: 14px;" 
+                                    onclick="document.getElementById('guestName').value = '不便透露'">
+                                <i class="fas fa-eye-slash"></i> 設為「不便透露」
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contactNumber"><i class="fas fa-phone"></i> 聯絡方式</label>
+                        <input type="text" id="contactNumber" placeholder="請輸入聯絡電話">
+                        <div class="contact-options">
+                            <div class="contact-btn" onclick="setContactType('無電話')">無電話</div>
+                            <div class="contact-btn" onclick="setContactType('不願提供')">不願提供</div>
+                            <div class="contact-btn" onclick="setContactType('無法溝通')">無法溝通</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gender"><i class="fas fa-venus-mars"></i> 性別</label>
+                            <select id="gender">
+                                <option value="">請選擇性別</option>
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="ageRange"><i class="fas fa-birthday-cake"></i> 年齡間距</label>
+                            <select id="ageRange">
+                                <option value="">請選擇年齡間距</option>
+                                <option value="">不便透露</option>
+                                <option value="0-12">0-12歲</option>
+                                <option value="13-17">13-17歲</option>
+                                <option value="18-25">18-25歲</option>
+                                <option value="26-35">26-35歲</option>
+                                <option value="36-45">36-45歲</option>
+                                <option value="46-55">46-55歲</option>
+                                <option value="56-65">56-65歲</option>
+                                <option value="66+">66歲以上</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="healthStatus"><i class="fas fa-heartbeat"></i> 健康狀況</label>
+                        <select id="healthStatus">
+                            <option value="綠色(第三優先)">綠色(第三優先)正常或傷勢較輕可以自行走動</option>
+                            <option value="黃色(第二優先)">黃色(第二優先)傷勢較為嚴重需要緊急處理</option>
+                            <option value="紅色(第一優先)">紅色(第一優先)有生命危險需要立即進行搶救</option>
+                            <option value="黑色(死亡/存活無望)">黑色(死亡/存活無望)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="source"><i class="fas fa-source"></i> 數據來源</label>
+                        <select id="source" onchange="toggleOtherSourceInput()">
+                            <option value="">請選擇數據來源</option>
+                            <option value="警方">警方</option>
+                            <option value="消防">消防</option>
+                            <option value="NP360熱線">NP360熱線</option>
+                            <option value="其他">其他</option>
+                        </select>
+                        <div id="other-source-input" class="other-source-input">
+                            <input type="text" id="other-source" placeholder="請輸入其他數據來源">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes"><i class="fas fa-sticky-note"></i> 備註</label>
+                        <textarea id="notes" rows="3" placeholder="請輸入任何額外備註信息"></textarea>
+                    </div>
+                    
+                    <button class="btn btn-block" onclick="saveThirdPartyRecord()">
+                        <i class="fas fa-save"></i> 保存求助記錄
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 記錄查看標籤頁 -->
+        <div id="records-tab" class="tab-content">
+            <div class="section">
+                <h2><i class="fas fa-list"></i> 求助記錄查看</h2>
+                <div id="records-message" class="message"></div>
+                
+                <div class="card">
+                    <div class="search-box">
+                        <input type="text" id="search-third-party" placeholder="輸入車廂號碼、賓客姓名或數據來源">
+                        <button class="btn" onclick="searchThirdPartyRecords()">
+                            <i class="fas fa-search"></i> 搜索
+                        </button>
+                    </div>
+                    
+                    <button class="btn btn-secondary btn-block" onclick="loadThirdPartyRecords()">
+                        <i class="fas fa-sync-alt"></i> 重新加載記錄
+                    </button>
+                </div>
+                
+                <div id="third-party-records">
+                    <table class="record-table">
+                        <thead>
+                            <tr>
+                                <th>車廂號碼</th>
+                                <th>賓客姓名</th>
+                                <th>聯絡方式</th>
+                                <th>性別</th>
+                                <th>年齡間距</th>
+                                <th>健康狀況</th>
+                                <th>數據來源</th>
+                                <th>狀態</th>
+                                <th>創建時間</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="third-party-records-list">
+                            <!-- 求助記錄將動態載入 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 對比結果區域 -->
+                <div id="comparison-results" class="comparison-results">
+                    <h3><i class="fas fa-chart-bar"></i> 對比結果 (僅顯示匹配度70%以上)</h3>
+                    <div id="results-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 數據統計標籤頁 -->
+        <div id="dashboard-tab" class="tab-content">
+            <div class="section">
+                <h2><i class="fas fa-chart-pie"></i> 數據統計</h2>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="number" id="total-third-party">0</div>
+                        <div class="label">求助記錄總數</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-heartbeat"></i>
+                        <div class="number" id="green-count">0</div>
+                        <div class="label">綠色(第三優先)</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-heartbeat"></i>
+                        <div class="number" id="yellow-count">0</div>
+                        <div class="label">黃色(第二優先)</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-heartbeat"></i>
+                        <div class="number" id="red-count">0</div>
+                        <div class="label">紅色(第一優先)</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-heartbeat"></i>
+                        <div class="number" id="black-count">0</div>
+                        <div class="label">黑色(死亡/存活無望)</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="number" id="processed-count">0</div>
+                        <div class="label">已處理記錄</div>
+                    </div>
+                </div>
+                
+                <div class="health-stats" id="health-stats">
+                    <div class="health-stat-card green">
+                        <div class="number" id="green-count-stat">0</div>
+                        <div class="label">綠色(第三優先)</div>
+                    </div>
+                    <div class="health-stat-card yellow">
+                        <div class="number" id="yellow-count-stat">0</div>
+                        <div class="label">黃色(第二優先)</div>
+                    </div>
+                    <div class="health-stat-card red">
+                        <div class="number" id="red-count-stat">0</div>
+                        <div class="label">紅色(第一優先)</div>
+                    </div>
+                    <div class="health-stat-card black">
+                        <div class="number" id="black-count-stat">0</div>
+                        <div class="label">黑色(死亡/存活無望)</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3><i class="fas fa-filter"></i> 記錄篩選</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label for="filter-source">數據來源</label>
+                            <select id="filter-source" onchange="filterThirdPartyRecords()">
+                                <option value="">所有來源</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="filter-health">健康狀況</label>
+                            <select id="filter-health" onchange="filterThirdPartyRecords()">
+                                <option value="">所有狀態</option>
+                                <option value="綠色(第三優先)">綠色(第三優先)</option>
+                                <option value="黃色(第二優先)">黃色(第二優先)</option>
+                                <option value="紅色(第一優先)">紅色(第一優先)</option>
+                                <option value="黑色(死亡/存活無望)">黑色(死亡/存活無望)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="filter-status">處理狀態</label>
+                            <select id="filter-status" onchange="filterThirdPartyRecords()">
+                                <option value="">所有狀態</option>
+                                <option value="pending">待處理</option>
+                                <option value="processed">已處理</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="filter-cabin">車廂號碼</label>
+                            <input type="text" id="filter-cabin" placeholder="輸入車廂號碼" oninput="filterThirdPartyRecords()">
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="filtered-third-party-records">
+                    <table class="record-table">
+                        <thead>
+                            <tr>
+                                <th>車廂號碼</th>
+                                <th>賓客姓名</th>
+                                <th>聯絡方式</th>
+                                <th>性別</th>
+                                <th>年齡間距</th>
+                                <th>健康狀況</th>
+                                <th>數據來源</th>
+                                <th>狀態</th>
+                                <th>創建時間</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filtered-third-party-list">
+                            <!-- 篩選後的記錄將動態載入 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>求助記錄系統 &copy; 2025 - 獨立數據存儲，不影響主系統記錄</p>
+        </footer>
+    </div>
+
+    <script>
+        // Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgSaPKhaaX9cP1tY-ThykJvo_sJtVyyDc",
+            authDomain: "qrcodesystem-bceda.firebaseapp.com",
+            databaseURL: "https://qrcodesystem-bceda-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "qrcodesystem-bceda",
+            storageBucket: "qrcodesystem-bceda.firebasestorage.app",
+            messagingSenderId: "253231467455",
+            appId: "1:253231467455:web:5eb19df93b8b621ec6af0a"
+        };
+
+        // 初始化Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // 全局變量
+        let allThirdPartyRecords = [];
+        let filteredThirdPartyRecords = [];
+        
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 設置標籤頁切換
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 更新標籤狀態
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 更新內容顯示
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                    
+                    // 如果是記錄查看或統計標籤頁，加載數據
+                    if (tabId === 'records' || tabId === 'dashboard') {
+                        loadThirdPartyRecords();
+                    }
+                });
+            });
+            
+            // 加載求助記錄
+            loadThirdPartyRecords();
+        });
+        
+        // 切換其他數據來源輸入框
+        function toggleOtherSourceInput() {
+            const sourceSelect = document.getElementById('source');
+            const otherSourceInput = document.getElementById('other-source-input');
+            
+            if (sourceSelect.value === '其他') {
+                otherSourceInput.style.display = 'block';
+            } else {
+                otherSourceInput.style.display = 'none';
+                document.getElementById('other-source').value = '';
+            }
+        }
+        
+        // 聯絡方式快速選擇
+        function setContactType(type) {
+            document.getElementById('contactNumber').value = type;
+            // 移除所有按鈕的active類
+            document.querySelectorAll('.contact-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            // 為當前按鈕添加active類
+            event.target.classList.add('active');
+        }
+        
+        // 顯示消息
+        function showMessage(elementId, message, type) {
+            const messageElement = document.getElementById(elementId);
+            messageElement.textContent = message;
+            messageElement.className = 'message';
+            
+            switch(type) {
+                case 'success':
+                    messageElement.classList.add('message-success');
+                    break;
+                case 'error':
+                    messageElement.classList.add('message-error');
+                    break;
+                case 'info':
+                    messageElement.classList.add('message-info');
+                    break;
+            }
+            
+            // 自動消失
+            if (type !== 'info') {
+                setTimeout(() => {
+                    messageElement.textContent = '';
+                    messageElement.className = 'message';
+                }, 5000);
+            }
+        }
+        
+        // 保存求助記錄
+        async function saveThirdPartyRecord() {
+            const cabinNumber = document.getElementById('cabinNumber').value;
+            const guestName = document.getElementById('guestName').value;
+            const contactNumber = document.getElementById('contactNumber').value;
+            const gender = document.getElementById('gender').value;
+            const ageRange = document.getElementById('ageRange').value;
+            const healthStatus = document.getElementById('healthStatus').value;
+            
+            // 處理數據來源
+            let source = document.getElementById('source').value;
+            if (source === '其他') {
+                source = document.getElementById('other-source').value;
+                if (!source) {
+                    showMessage('message', '請輸入其他數據來源', 'error');
+                    return;
+                }
+            }
+            
+            const notes = document.getElementById('notes').value;
+            
+            // 取消必填字段驗證，所有字段都改為可選
+            try {
+                // 保存到獨立的求助記錄集合
+                await db.collection('rescue_records').add({
+                    cabinNumber,
+                    guestName,
+                    contactNumber,
+                    gender,
+                    ageRange,
+                    healthStatus,
+                    source,
+                    notes,
+                    createdAt: new Date(),
+                    status: 'pending',
+                    processed: false
+                });
+                
+                showMessage('message', '求助記錄保存成功！', 'success');
+                
+                // 清空表單
+                document.getElementById('cabinNumber').value = '';
+                document.getElementById('guestName').value = '';
+                document.getElementById('contactNumber').value = '';
+                document.getElementById('gender').value = '';
+                document.getElementById('ageRange').value = '';
+                document.getElementById('healthStatus').value = '綠色(第三優先)';
+                document.getElementById('source').value = '';
+                document.getElementById('other-source').value = '';
+                document.getElementById('other-source-input').style.display = 'none';
+                document.getElementById('notes').value = '';
+                
+                // 重置聯絡方式按鈕
+                document.querySelectorAll('.contact-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // 重新加載記錄
+                loadThirdPartyRecords();
+                
+            } catch (error) {
+                console.error('保存求助記錄失敗:', error);
+                showMessage('message', '保存失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 加載求助記錄
+        async function loadThirdPartyRecords() {
+            try {
+                const snapshot = await db.collection('rescue_records')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                
+                const recordsList = document.getElementById('third-party-records-list');
+                const filteredList = document.getElementById('filtered-third-party-list');
+                
+                recordsList.innerHTML = '';
+                filteredList.innerHTML = '';
+                
+                let total = 0;
+                let greenCount = 0, yellowCount = 0, redCount = 0, blackCount = 0, processedCount = 0;
+                const sources = new Set();
+                
+                allThirdPartyRecords = []; // 重置所有記錄
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const id = doc.id;
+                    const createdAt = data.createdAt ? data.createdAt.toDate().toLocaleString('zh-TW') : '未知';
+                    
+                    // 添加記錄到所有記錄數組
+                    allThirdPartyRecords.push({
+                        id,
+                        ...data,
+                        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+                        processedAt: data.processedAt ? data.processedAt.toDate() : null
+                    });
+                    
+                    // 添加到來源集合
+                    if (data.source) {
+                        sources.add(data.source);
+                    }
+                    
+                    // 健康狀況統計
+                    if (data.healthStatus) {
+                        if (data.healthStatus.includes('綠色')) greenCount++;
+                        else if (data.healthStatus.includes('黃色')) yellowCount++;
+                        else if (data.healthStatus.includes('紅色')) redCount++;
+                        else if (data.healthStatus.includes('黑色')) blackCount++;
+                    }
+                    
+                    // 處理狀態統計
+                    if (data.processed) {
+                        processedCount++;
+                    }
+                    
+                    // 狀態標籤
+                    let statusBadge = '';
+                    if (data.processed) {
+                        statusBadge = '<span class="status-badge status-processed">已處理</span>';
+                    } else {
+                        statusBadge = '<span class="status-badge status-pending">待處理</span>';
+                    }
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data.cabinNumber || '-'}</td>
+                        <td>${data.guestName || '-'}</td>
+                        <td>${data.contactNumber || '-'}</td>
+                        <td>${data.gender || '-'}</td>
+                        <td>${data.ageRange || '-'}</td>
+                        <td>${data.healthStatus || '-'}</td>
+                        <td>${data.source || '-'}</td>
+                        <td>${statusBadge}</td>
+                        <td>${createdAt}</td>
+                        <td>
+                            <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${id}')">
+                                <i class="fas fa-search"></i> 對比
+                            </button>
+                            ${!data.processed ? `
+                            <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="markAsProcessed('${id}')">
+                                <i class="fas fa-check"></i> 求助個案已救援
+                            </button>
+                            ` : ''}
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteThirdPartyRecord('${id}')">
+                                <i class="fas fa-trash"></i> 刪除
+                            </button>
+                        </td>
+                    `;
+                    
+                    recordsList.appendChild(row);
+                    
+                    // 同時添加到篩選列表
+                    const filteredRow = row.cloneNode(true);
+                    filteredList.appendChild(filteredRow);
+                    
+                    total++;
+                });
+                
+                // 更新統計數字
+                document.getElementById('total-third-party').textContent = total;
+                document.getElementById('green-count').textContent = greenCount;
+                document.getElementById('yellow-count').textContent = yellowCount;
+                document.getElementById('red-count').textContent = redCount;
+                document.getElementById('black-count').textContent = blackCount;
+                document.getElementById('processed-count').textContent = processedCount;
+                
+                // 更新健康統計卡片
+                document.getElementById('green-count-stat').textContent = greenCount;
+                document.getElementById('yellow-count-stat').textContent = yellowCount;
+                document.getElementById('red-count-stat').textContent = redCount;
+                document.getElementById('black-count-stat').textContent = blackCount;
+                
+                // 更新來源篩選選項
+                const sourceFilter = document.getElementById('filter-source');
+                sourceFilter.innerHTML = '<option value="">所有來源</option>';
+                sources.forEach(source => {
+                    const option = document.createElement('option');
+                    option.value = source;
+                    option.textContent = source;
+                    sourceFilter.appendChild(option);
+                });
+                
+                // 保存篩選記錄
+                filteredThirdPartyRecords = [...allThirdPartyRecords];
+                
+            } catch (error) {
+                console.error('載入求助記錄失敗:', error);
+                showMessage('records-message', '載入記錄失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 刪除求助記錄
+        async function deleteThirdPartyRecord(docId) {
+            if (!confirm('確定要刪除此求助記錄嗎？此操作無法復原。')) {
+                return;
+            }
+            
+            try {
+                await db.collection('rescue_records').doc(docId).delete();
+                showMessage('records-message', '記錄刪除成功', 'success');
+                loadThirdPartyRecords();
+            } catch (error) {
+                console.error('刪除記錄失敗:', error);
+                showMessage('records-message', '刪除失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 標記記錄為已處理
+        async function markAsProcessed(docId) {
+            if (!confirm('確定要將此記錄標記為已處理嗎？')) {
+                return;
+            }
+            
+            try {
+                await db.collection('rescue_records').doc(docId).update({
+                    processed: true,
+                    processedAt: new Date()
+                });
+                
+                showMessage('records-message', '記錄已標記為已處理', 'success');
+                loadThirdPartyRecords();
+            } catch (error) {
+                console.error('標記記錄失敗:', error);
+                showMessage('records-message', '標記失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 對比單個求助記錄
+        async function compareSingleRecord(recordId) {
+            const record = allThirdPartyRecords.find(r => r.id === recordId);
+            
+            if (!record) {
+                showMessage('records-message', '找不到指定的記錄', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('records-message', '正在查詢系統數據...', 'info');
+                
+                // 獲取所有記錄
+                const snapshot = await db.collection('guests').get();
+                let results = [];
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    let match = false;
+                    
+                    // 檢查每個字段的匹配情況（大小寫不敏感）
+                    const recordCabin = data.cabinNumber ? data.cabinNumber.toLowerCase().trim() : '';
+                    const inputCabin = record.cabinNumber ? record.cabinNumber.toLowerCase().trim() : '';
+                    
+                    const recordName = data.guestName ? data.guestName.toLowerCase().trim() : '';
+                    const inputName = record.guestName ? record.guestName.toLowerCase().trim() : '';
+                    
+                    const recordContact = data.contactNumber ? data.contactNumber.toLowerCase().trim() : '';
+                    const inputContact = record.contactNumber ? record.contactNumber.toLowerCase().trim() : '';
+                    
+                    const recordGender = data.gender || '';
+                    const inputGender = record.gender || '';
+                    
+                    const recordAgeRange = data.ageRange || '';
+                    const inputAgeRange = record.ageRange || '';
+                    
+                    const recordHealth = data.healthStatus || '';
+                    const inputHealth = record.healthStatus || '';
+                    
+                    // 如果有任何一個字段匹配，就認為是潛在匹配
+                    if ((record.cabinNumber && recordCabin === inputCabin) ||
+                        (record.guestName && recordName === inputName) ||
+                        (record.contactNumber && recordContact === inputContact) ||
+                        (record.gender && recordGender === inputGender) ||
+                        (record.ageRange && recordAgeRange === inputAgeRange) ||
+                        (record.healthStatus && recordHealth === inputHealth)) {
+                        match = true;
+                    }
+                    
+                    if (match) {
+                        results.push({
+                            id: doc.id,
+                            ...data,
+                            matchScore: calculateMatchScore(data, {
+                                cabinNumber: record.cabinNumber,
+                                guestName: record.guestName,
+                                contactNumber: record.contactNumber,
+                                gender: record.gender,
+                                ageRange: record.ageRange,
+                                healthStatus: record.healthStatus
+                            })
+                        });
+                    }
+                });
+                
+                // 按匹配度從高到低排序，並過濾掉匹配度低於70%的記錄
+                results.sort((a, b) => b.matchScore - a.matchScore);
+                results = results.filter(result => result.matchScore >= 70);
+                
+                displayComparisonResults(results, {
+                    cabinNumber: record.cabinNumber,
+                    guestName: record.guestName,
+                    contactNumber: record.contactNumber,
+                    gender: record.gender,
+                    ageRange: record.ageRange,
+                    healthStatus: record.healthStatus
+                });
+                
+            } catch (error) {
+                console.error('查詢失敗:', error);
+                showMessage('records-message', '查詢失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 顯示對比結果
+        function displayComparisonResults(results, inputData) {
+            const resultsList = document.getElementById('results-list');
+            const comparisonResults = document.getElementById('comparison-results');
+            
+            if (results.length === 0) {
+                resultsList.innerHTML = '<div class="message message-info">未找到匹配度70%以上的記錄</div>';
+                comparisonResults.style.display = 'block';
+                return;
+            }
+            
+            resultsList.innerHTML = '';
+            
+            results.forEach(record => {
+                // 計算匹配度
+                const matchScore = record.matchScore;
+                
+                const resultItem = document.createElement('div');
+                resultItem.className = 'comparison-item';
+                
+                // 確定匹配級別
+                let matchLevel = 'low';
+                let matchText = '低匹配度';
+                
+                if (matchScore >= 80) {
+                    matchLevel = 'high';
+                    matchText = '高匹配度';
+                } else if (matchScore >= 70) {
+                    matchLevel = 'medium';
+                    matchText = '中等匹配度';
+                }
+                
+                resultItem.innerHTML = `
+                    <div class="comparison-header">
+                        <h4>${record.guestName || '未提供姓名'} - 車廂 ${record.cabinNumber || '未指定'}</h4>
+                        <span class="match-level match-${matchLevel}">${matchText} (${matchScore}%)</span>
+                    </div>
+                    <div class="comparison-details">
+                        <div>
+                            <h5>求助記錄數據</h5>
+                            <div class="comparison-field">
+                                <span class="field-label">車廂號碼:</span> ${inputData.cabinNumber || '未提供'}
+                                <span class="field-match ${inputData.cabinNumber && inputData.cabinNumber.toLowerCase().trim() === (record.cabinNumber || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">賓客姓名:</span> ${inputData.guestName || '未提供'}
+                                <span class="field-match ${inputData.guestName && inputData.guestName.toLowerCase().trim() === (record.guestName || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">聯絡方式:</span> ${inputData.contactNumber || '未提供'}
+                                <span class="field-match ${inputData.contactNumber && inputData.contactNumber.toLowerCase().trim() === (record.contactNumber || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">性別:</span> ${inputData.gender || '未提供'}
+                                <span class="field-match ${inputData.gender && inputData.gender === record.gender ? 'match-true' : 'match-false'}"></span>
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">年齡間距:</span> ${inputData.ageRange || '未提供'}
+                                <span class="field-match ${inputData.ageRange && inputData.ageRange === record.ageRange ? 'match-true' : 'match-false'}"></span>
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">健康狀況:</span> ${inputData.healthStatus || '未提供'}
+                                <span class="field-match ${inputData.healthStatus && inputData.healthStatus === record.healthStatus ? 'match-true' : 'match-false'}"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <h5>系統中的記錄</h5>
+                            <div class="comparison-field">
+                                <span class="field-label">車廂號碼:</span> ${record.cabinNumber || '未指定'}
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">賓客姓名:</span> ${record.guestName || '未提供'}
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">聯絡方式:</span> ${record.contactNumber || '未提供'}
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">性別:</span> ${record.gender || '未提供'}
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">年齡間距:</span> ${record.ageRange || '未提供'}
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">健康狀況:</span> ${record.healthStatus || '未提供'}
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">組別:</span> ${record.groupNumber ? '第' + record.groupNumber + '組' : '未指定'}
+                            </div>
+                            <div class="comparison-field">
+                                <span class="field-label">狀態:</span> 
+                                <span class="status-badge ${record.status === 'completed' ? 'status-complete' : 'status-pending'}">
+                                    ${record.status === 'completed' ? '已完成' : '處理中'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-actions">
+                        <button class="btn btn-secondary" onclick="markRescueRecordAsRescued('${record.id}', '${record.cabinNumber || ''}', '${record.guestName || ''}')">
+                            <i class="fas fa-check"></i> 求助個案已救援
+                        </button>
+                    </div>
+                `;
+                
+                resultsList.appendChild(resultItem);
+            });
+            
+            comparisonResults.style.display = 'block';
+            showMessage('records-message', `找到 ${results.length} 條匹配度70%以上的記錄，已按匹配度排序`, 'success');
+        }
+        
+        // 計算匹配度
+        function calculateMatchScore(record, inputData) {
+            let score = 0;
+            let totalFields = 0;
+            
+            // 檢查每個字段的匹配情況
+            const fields = ['cabinNumber', 'guestName', 'contactNumber', 'gender', 'ageRange', 'healthStatus'];
+            
+            fields.forEach(field => {
+                if (inputData[field]) {
+                    totalFields++;
+                    // 使用大小寫不敏感的比較
+                    if (field === 'cabinNumber' || field === 'guestName' || field === 'contactNumber') {
+                        const recordValue = record[field] ? record[field].toLowerCase().trim() : '';
+                        const inputValue = inputData[field] ? inputData[field].toLowerCase().trim() : '';
+                        if (recordValue === inputValue) {
+                            score++;
+                        }
+                    } else {
+                        if (record[field] === inputData[field]) {
+                            score++;
+                        }
+                    }
+                }
+            });
+            
+            // 如果沒有提供任何字段，返回0
+            if (totalFields === 0) return 0;
+            
+            // 計算百分比
+            return Math.round((score / totalFields) * 100);
+        }
+        
+        // 標記求助記錄為已救援
+        async function markRescueRecordAsRescued(guestId, cabinNumber, guestName) {
+            try {
+                // 直接查找匹配的求助記錄，而不是通過主系統記錄
+                let query = db.collection('rescue_records').where('processed', '==', false);
+                
+                // 如果有車廂號碼和賓客姓名，使用它們來查找
+                if (cabinNumber && guestName) {
+                    query = query.where('cabinNumber', '==', cabinNumber)
+                                 .where('guestName', '==', guestName);
+                } else if (cabinNumber) {
+                    query = query.where('cabinNumber', '==', cabinNumber);
+                } else if (guestName) {
+                    query = query.where('guestName', '==', guestName);
+                }
+                
+                const rescueRecordsSnapshot = await query.get();
+                
+                if (rescueRecordsSnapshot.empty) {
+                    showMessage('records-message', '未找到匹配的求助記錄', 'error');
+                    return;
+                }
+                
+                // 標記所有匹配的求助記錄為已處理
+                const batch = db.batch();
+                let processedCount = 0;
+                
+                rescueRecordsSnapshot.forEach(doc => {
+                    const rescueRecord = doc.data();
+                    if (!rescueRecord.processed) {
+                        batch.update(doc.ref, {
+                            processed: true,
+                            processedAt: new Date()
+                        });
+                        processedCount++;
+                    }
+                });
+                
+                if (processedCount > 0) {
+                    await batch.commit();
+                    showMessage('records-message', `成功標記 ${processedCount} 條求助記錄為已救援`, 'success');
+                    loadThirdPartyRecords();
+                } else {
+                    showMessage('records-message', '所有匹配的求助記錄已經標記為已救援', 'info');
+                }
+                
+            } catch (error) {
+                console.error('標記求助記錄失敗:', error);
+                showMessage('records-message', '標記失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 篩選求助記錄
+        function filterThirdPartyRecords() {
+            const sourceFilter = document.getElementById('filter-source').value;
+            const healthFilter = document.getElementById('filter-health').value;
+            const statusFilter = document.getElementById('filter-status').value;
+            const cabinFilter = document.getElementById('filter-cabin').value.toLowerCase();
+            
+            const filteredList = document.getElementById('filtered-third-party-list');
+            filteredList.innerHTML = '';
+            
+            filteredThirdPartyRecords = allThirdPartyRecords.filter(record => {
+                let match = true;
+                
+                // 來源篩選
+                if (sourceFilter && record.source !== sourceFilter) {
+                    match = false;
+                }
+                
+                // 健康狀況篩選
+                if (healthFilter && record.healthStatus !== healthFilter) {
+                    match = false;
+                }
+                
+                // 狀態篩選
+                if (statusFilter) {
+                    if (statusFilter === 'pending' && record.processed) {
+                        match = false;
+                    } else if (statusFilter === 'processed' && !record.processed) {
+                        match = false;
+                    }
+                }
+                
+                // 車廂號碼篩選
+                if (cabinFilter && (!record.cabinNumber || !record.cabinNumber.toLowerCase().includes(cabinFilter))) {
+                    match = false;
+                }
+                
+                return match;
+            });
+            
+            // 顯示篩選結果
+            filteredThirdPartyRecords.forEach(record => {
+                const createdAt = record.createdAt ? record.createdAt.toLocaleString('zh-TW') : '未知';
+                
+                // 狀態標籤
+                let statusBadge = '';
+                if (record.processed) {
+                    statusBadge = '<span class="status-badge status-processed">已處理</span>';
+                } else {
+                    statusBadge = '<span class="status-badge status-pending">待處理</span>';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.cabinNumber || '-'}</td>
+                    <td>${record.guestName || '-'}</td>
+                    <td>${record.contactNumber || '-'}</td>
+                    <td>${record.gender || '-'}</td>
+                    <td>${record.ageRange || '-'}</td>
+                    <td>${record.healthStatus || '-'}</td>
+                    <td>${record.source || '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${createdAt}</td>
+                `;
+                
+                filteredList.appendChild(row);
+            });
+        }
+        
+        // 搜索求助記錄
+        function searchThirdPartyRecords() {
+            const searchTerm = document.getElementById('search-third-party').value.toLowerCase();
+            
+            const recordsList = document.getElementById('third-party-records-list');
+            recordsList.innerHTML = '';
+            
+            const searchResults = allThirdPartyRecords.filter(record => {
+                return (
+                    (record.cabinNumber && record.cabinNumber.toLowerCase().includes(searchTerm)) ||
+                    (record.guestName && record.guestName.toLowerCase().includes(searchTerm)) ||
+                    (record.source && record.source.toLowerCase().includes(searchTerm))
+                );
+            });
+            
+            // 顯示搜索結果
+            searchResults.forEach(record => {
+                const createdAt = record.createdAt ? record.createdAt.toLocaleString('zh-TW') : '未知';
+                
+                // 狀態標籤
+                let statusBadge = '';
+                if (record.processed) {
+                    statusBadge = '<span class="status-badge status-processed">已處理</span>';
+                } else {
+                    statusBadge = '<span class="status-badge status-pending">待處理</span>';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.cabinNumber || '-'}</td>
+                    <td>${record.guestName || '-'}</td>
+                    <td>${record.contactNumber || '-'}</td>
+                    <td>${record.gender || '-'}</td>
+                    <td>${record.ageRange || '-'}</td>
+                    <td>${record.healthStatus || '-'}</td>
+                    <td>${record.source || '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td>${createdAt}</td>
+                    <td>
+                        <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${record.id}')">
+                            <i class="fas fa-search"></i> 對比
+                        </button>
+                        ${!record.processed ? `
+                        <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="markAsProcessed('${record.id}')">
+                            <i class="fas fa-check"></i> 求助個案已救援
+                        </button>
+                        ` : ''}
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteThirdPartyRecord('${record.id}')">
+                            <i class="fas fa-trash"></i> 刪除
+                        </button>
+                    </td>
+                `;
+                
+                recordsList.appendChild(row);
+            });
+            
+            showMessage('records-message', `找到 ${searchResults.length} 條匹配記錄`, 'success');
+        }
+    </script>
+</body>
+</html>
