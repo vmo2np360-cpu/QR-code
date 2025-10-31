@@ -1268,6 +1268,27 @@
                 max-height: 250px;
             }
         }
+
+        /* 組別重複警告樣式 */
+        .group-duplicate-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .group-duplicate-warning strong {
+            color: #856404;
+        }
+
+        /* 輸入框錯誤狀態 */
+        .input-error {
+            border-color: #EA4335 !important;
+            box-shadow: 0 0 0 3px rgba(234, 67, 53, 0.2) !important;
+        }
     </style>
 </head>
 <body>
@@ -3120,7 +3141,7 @@
             auth.signOut();
         }
         
-        // 載入記錄
+        // 載入記錄 - 修復版本 (問題1修復)
         async function loadRecords() {
             try {
                 showLoader();
@@ -3129,6 +3150,12 @@
                     .get();
                 
                 const recordsList = document.getElementById('records-list');
+                if (!recordsList) {
+                    console.error('records-list element not found');
+                    hideLoader();
+                    return;
+                }
+                
                 recordsList.innerHTML = '';
                 
                 let total = 0, completed = 0, pending = 0;
@@ -3140,14 +3167,31 @@
                     const data = doc.data();
                     const id = doc.id;
                     const createdAt = data.createdAt ? data.createdAt.toDate().toLocaleString() : '未知';
-                    const exitTime = data.exitTime ? data.exitTime.toDate().toLocaleString() : '-';
+                    
+                    // 問題1修復：安全處理 exitTime 字段
+                    let exitTime = '-';
+                    if (data.exitTime) {
+                        if (typeof data.exitTime.toDate === 'function') {
+                            exitTime = data.exitTime.toDate().toLocaleString();
+                        } else if (data.exitTime instanceof Date) {
+                            exitTime = data.exitTime.toLocaleString();
+                        } else {
+                            // 如果是字符串或其他格式，尝试转换
+                            try {
+                                exitTime = new Date(data.exitTime).toLocaleString();
+                            } catch (e) {
+                                console.warn('無法解析離場時間:', data.exitTime);
+                                exitTime = '格式錯誤';
+                            }
+                        }
+                    }
                     
                     // 添加记录到所有记录数组
                     allRecords.push({
                         id,
                         ...data,
                         createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-                        exitTime: data.exitTime ? data.exitTime.toDate() : null
+                        exitTime: data.exitTime ? (typeof data.exitTime.toDate === 'function' ? data.exitTime.toDate() : new Date(data.exitTime)) : null
                     });
                     
                     const row = document.createElement('tr');
@@ -3186,15 +3230,24 @@
                 });
                 
                 // 更新統計數字
-                document.getElementById('totalRecords').textContent = total;
-                document.getElementById('completedRecords').textContent = completed;
-                document.getElementById('pendingRecords').textContent = pending;
+                const totalRecordsElem = document.getElementById('totalRecords');
+                const completedRecordsElem = document.getElementById('completedRecords');
+                const pendingRecordsElem = document.getElementById('pendingRecords');
+                
+                if (totalRecordsElem) totalRecordsElem.textContent = total;
+                if (completedRecordsElem) completedRecordsElem.textContent = completed;
+                if (pendingRecordsElem) pendingRecordsElem.textContent = pending;
                 
                 // 更新健康狀況統計
-                document.getElementById('green-count').textContent = greenCount;
-                document.getElementById('yellow-count').textContent = yellowCount;
-                document.getElementById('red-count').textContent = redCount;
-                document.getElementById('black-count').textContent = blackCount;
+                const greenCountElem = document.getElementById('green-count');
+                const yellowCountElem = document.getElementById('yellow-count');
+                const redCountElem = document.getElementById('red-count');
+                const blackCountElem = document.getElementById('black-count');
+                
+                if (greenCountElem) greenCountElem.textContent = greenCount;
+                if (yellowCountElem) yellowCountElem.textContent = yellowCount;
+                if (redCountElem) redCountElem.textContent = redCount;
+                if (blackCountElem) blackCountElem.textContent = blackCount;
                 
             } catch (error) {
                 console.error('載入記錄失敗:', error);
@@ -3204,15 +3257,21 @@
             }
         }
         
-        // 過濾記錄
+        // 過濾記錄 - 修復版本
         function filterRecords() {
+            const recordsList = document.getElementById('records-list');
+            if (!recordsList) {
+                console.error('records-list element not found in filterRecords');
+                return;
+            }
+            
             const searchInput = document.getElementById('searchInput').value.toLowerCase();
             const exitMethodFilter = document.getElementById('filter-exitMethod').value;
             const healthFilter = document.getElementById('filter-health').value;
             const statusFilter = document.getElementById('filter-status').value;
             const ageFilter = document.getElementById('filter-age').value;
             
-            const rows = document.querySelectorAll('#records-list tr');
+            const rows = recordsList.querySelectorAll('tr');
             let visibleCount = 0;
             
             rows.forEach(row => {
@@ -3267,7 +3326,10 @@
             });
             
             // 更新統計數字以反映篩選結果
-            document.getElementById('totalRecords').textContent = visibleCount;
+            const totalRecordsElem = document.getElementById('totalRecords');
+            if (totalRecordsElem) {
+                totalRecordsElem.textContent = visibleCount;
+            }
         }
         
         // 顯示消息
@@ -3317,6 +3379,418 @@
             const loader = document.getElementById('global-loader');
             if (loader) loader.remove();
         }
+        
+        // 檢查組別是否重複的函數
+        async function checkGroupDuplicate(cabinNumber, groupNumber, excludeDocId = null) {
+            try {
+                console.log('正在檢查組別重複:', cabinNumber, groupNumber, '排除:', excludeDocId);
+                
+                let query = db.collection('guests')
+                    .where('cabinNumber', '==', cabinNumber)
+                    .where('groupNumber', '==', groupNumber);
+                
+                const querySnapshot = await query.get();
+                
+                if (querySnapshot.empty) {
+                    console.log('沒有找到重複組別');
+                    return null;
+                }
+                
+                // 過濾掉排除的文檔
+                const duplicates = [];
+                querySnapshot.forEach(doc => {
+                    if (doc.id !== excludeDocId) {
+                        duplicates.push({
+                            docId: doc.id,
+                            ...doc.data()
+                        });
+                    }
+                });
+                
+                if (duplicates.length > 0) {
+                    console.log('找到重複組別:', duplicates);
+                    return duplicates[0]; // 返回第一個重複記錄
+                }
+                
+                console.log('排除自身後沒有重複組別');
+                return null;
+            } catch (error) {
+                console.error('檢查組別重複失敗:', error);
+                return null;
+            }
+        }
+        
+        // 實時檢查組別號碼是否重複
+        async function checkGroupNumberRealTime() {
+            const groupNumber = document.getElementById('groupDetailGroupNumber').value;
+            const cabinNumber = document.getElementById('groupDetailCabinNumber').value;
+            const docId = document.getElementById('groupDetailDocId').value;
+            
+            if (!groupNumber || !cabinNumber) {
+                return;
+            }
+            
+            try {
+                const existingRecord = await checkGroupDuplicate(cabinNumber, groupNumber, docId);
+                
+                const groupNumberInput = document.getElementById('groupDetailGroupNumber');
+                const duplicateWarning = document.getElementById('group-duplicate-warning') || createGroupDuplicateWarning();
+                
+                if (existingRecord) {
+                    // 顯示重複警告
+                    duplicateWarning.style.display = 'block';
+                    duplicateWarning.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-exclamation-triangle" style="color: #EA4335;"></i>
+                            <strong>組別重複警告</strong>
+                        </div>
+                        <p style="margin: 8px 0; font-size: 0.9rem;">
+                            車廂 ${cabinNumber} 中已經存在第${groupNumber}組<br>
+                            現有賓客：${existingRecord.guestName || '未提供姓名'}
+                        </p>
+                    `;
+                    
+                    // 添加紅色邊框提示
+                    groupNumberInput.classList.add('input-error');
+                } else {
+                    // 隱藏警告並恢復正常樣式
+                    duplicateWarning.style.display = 'none';
+                    groupNumberInput.classList.remove('input-error');
+                }
+            } catch (error) {
+                console.error('實時檢查組別重複失敗:', error);
+            }
+        }
+        
+        // 創建組別重複警告元素
+        function createGroupDuplicateWarning() {
+            const warningDiv = document.createElement('div');
+            warningDiv.id = 'group-duplicate-warning';
+            warningDiv.className = 'group-duplicate-warning';
+            warningDiv.style.display = 'none';
+            warningDiv.style.marginTop = '10px';
+            
+            const groupNumberInput = document.getElementById('groupDetailGroupNumber');
+            groupNumberInput.parentNode.insertBefore(warningDiv, groupNumberInput.nextSibling);
+            
+            return warningDiv;
+        }
+        
+        // 組別詳情表單提交 - 問題2修復版本
+        document.getElementById('groupDetailForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                showLoader();
+                
+                const form = document.getElementById('groupDetailForm');
+                const formData = new FormData(form);
+                const guestData = {};
+                
+                for (const [key, value] of formData.entries()) {
+                    guestData[key] = value;
+                }
+                
+                // 處理救援人員字段
+                const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
+                const otherRescuerInput = document.getElementById('otherRescuerInput');
+                
+                if (rescuedBySelect.value === '其他' && otherRescuerInput.value) {
+                    // 如果選擇"其他"且有輸入值，使用輸入的值
+                    guestData.rescuedBy = otherRescuerInput.value;
+                } else if (rescuedBySelect.value && rescuedBySelect.value !== '其他') {
+                    // 如果選擇了預設選項，使用選項的值
+                    guestData.rescuedBy = rescuedBySelect.value;
+                } else {
+                    // 否則清空救援人員字段
+                    guestData.rescuedBy = '';
+                }
+                
+                // 檢查必填字段
+                if (!guestData.cabinNumber || !guestData.groupNumber || !guestData.healthStatus) {
+                    alert('請填寫所有必填字段（車廂號碼、組別、健康狀況）');
+                    return;
+                }
+                
+                // 檢查救護車需求
+                if (guestData.ambulance === '需要' && !guestData.ambulancePlate) {
+                    alert('請輸入救護車車牌號碼');
+                    return;
+                }
+                
+                const docId = guestData.docId;
+                delete guestData.docId;
+                
+                // 檢查組別是否重複
+                const existingRecord = await checkGroupDuplicate(guestData.cabinNumber, guestData.groupNumber, docId);
+                
+                if (existingRecord) {
+                    // 顯示詳細的重複警告
+                    const duplicateMessage = `
+發現重複組別！
+
+車廂 ${guestData.cabinNumber} 中已經存在第${guestData.groupNumber}組
+
+現有記錄：
+- 賓客姓名：${existingRecord.guestName || '未提供'}
+- 聯絡方式：${existingRecord.contactNumber || '未提供'}
+- 健康狀況：${existingRecord.healthStatus || '未提供'}
+
+請選擇：
+• "取消" - 返回修改組別號碼
+• "查看現有記錄" - 查看並編輯現有記錄
+• "仍然建立" - 強制建立新記錄（不建議）
+                    `;
+                    
+                    const userChoice = confirm(duplicateMessage + "\n\n按「確定」查看現有記錄，按「取消」返回修改。");
+                    
+                    if (userChoice) {
+                        // 用戶選擇查看現有記錄
+                        closeGroupDetailModal();
+                        loadGroupDetail(existingRecord.docId);
+                    }
+                    // 如果用戶選擇取消，則不進行任何操作，讓用戶修改組別
+                    return;
+                }
+                
+                let savedDocId = docId;
+                
+                // 保存記錄
+                if (docId) {
+                    // 更新現有記錄
+                    await db.collection('guests').doc(docId).update({
+                        ...guestData,
+                        updatedAt: new Date()
+                    });
+                } else {
+                    // 創建新記錄
+                    const docRef = await db.collection('guests').add({
+                        ...guestData,
+                        createdAt: new Date(),
+                        status: 'pending'
+                    });
+                    savedDocId = docRef.id;
+                }
+                
+                alert('組別記錄保存成功');
+                
+                // 問題2修復：立即更新救援地圖狀態
+                updateRescueMapFromFirestore();
+                
+                // 問題2修復：如果當前有打開的車廂表單，立即更新組別列表
+                if (currentCabin) {
+                    await loadGroupList(currentCabin);
+                    await loadGroupStatus(currentCabin);
+                }
+                
+                closeGroupDetailModal();
+                
+            } catch (error) {
+                console.error('保存組別記錄失敗:', error);
+                alert('保存失敗: ' + error.message);
+            } finally {
+                hideLoader();
+            }
+        });
+        
+        // 在打開組別詳情模態框時，添加組別重複檢查的視覺提示
+        function openGroupDetailModal(guestData) {
+            const modal = document.getElementById('groupDetailModal');
+            const form = document.getElementById('groupDetailForm');
+            
+            if (!modal || !form) {
+                console.error('找不到組別詳情模態框或表單');
+                return;
+            }
+            
+            // 重置表單
+            form.reset();
+            
+            // 填充資料
+            if (guestData.docId) {
+                document.getElementById('groupDetailDocId').value = guestData.docId;
+            }
+            
+            if (guestData.cabinNumber) {
+                document.getElementById('groupDetailCabinNumber').value = guestData.cabinNumber;
+            }
+            
+            // 填充表單字段
+            const fieldMappings = {
+                'groupNumber': 'groupDetailGroupNumber',
+                'guestName': 'groupDetailGuestName',
+                'contactNumber': 'groupDetailContactNumber',
+                'gender': 'groupDetailGender',
+                'ageRange': 'groupDetailAgeRange',
+                'healthStatus': 'groupDetailHealthStatus',
+                'ambulance': 'groupDetailAmbulance',
+                'ambulancePlate': 'groupDetailAmbulancePlate',
+                'exitMethod': 'groupDetailExitMethod',
+                'rescuedBy': 'groupDetailRescuedBy',
+                'timeReachedTop': 'groupDetailTimeReachedTop',
+                'timeLanded': 'groupDetailTimeLanded',
+                'remarks': 'groupDetailRemarks'
+            };
+            
+            for (const [dataKey, elementId] of Object.entries(fieldMappings)) {
+                const element = document.getElementById(elementId);
+                if (element && guestData[dataKey]) {
+                    element.value = guestData[dataKey];
+                }
+            }
+            
+            // 處理離場時間
+            if (guestData.exitTime) {
+                const exitTime = guestData.exitTime.toDate ? guestData.exitTime.toDate() : new Date(guestData.exitTime);
+                document.getElementById('groupDetailExitTime').value = exitTime.toISOString().slice(0, 16);
+            }
+            
+            // 處理救援人員字段
+            if (guestData.rescuedBy) {
+                const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
+                const otherRescuerInput = document.getElementById('otherRescuerInput');
+                const otherRescuerContainer = document.getElementById('otherRescuerContainer');
+                
+                const presetOptions = ['消防員', '民安隊', '警察', 'NP360職員'];
+                if (presetOptions.includes(guestData.rescuedBy)) {
+                    rescuedBySelect.value = guestData.rescuedBy;
+                    otherRescuerContainer.style.display = 'none';
+                } else {
+                    rescuedBySelect.value = '其他';
+                    otherRescuerInput.value = guestData.rescuedBy;
+                    otherRescuerContainer.style.display = 'block';
+                }
+            }
+            
+            // 更新組別狀態徽章
+            updateGroupStatusBadge(guestData);
+            
+            // 新增：添加組別輸入框的實時重複檢查
+            const groupNumberInput = document.getElementById('groupDetailGroupNumber');
+            if (groupNumberInput) {
+                // 移除之前的事件監聽器
+                groupNumberInput.removeEventListener('change', checkGroupNumberRealTime);
+                // 添加新的事件監聽器
+                groupNumberInput.addEventListener('change', checkGroupNumberRealTime);
+            }
+            
+            // 顯示模態框
+            modal.style.display = 'flex';
+            
+            // 生成QR碼
+            generateGroupQRCode(guestData);
+            
+            // 設置救護車需求顯示
+            toggleGroupAmbulancePlate();
+            
+            // 設置救援人員顯示
+            toggleOtherRescuerInput();
+            
+            // 立即檢查一次
+            setTimeout(checkGroupNumberRealTime, 100);
+        }
+        
+        // 更新組別狀態徽章
+        function updateGroupStatusBadge(guestData) {
+            const badge = document.getElementById('group-status-badge');
+            if (!badge) return;
+            
+            badge.className = 'status-badge';
+            
+            // 使用新的狀態判斷函數
+            const groupStatus = getGroupRescueStatus(guestData);
+            
+            switch(groupStatus) {
+                case 'landed':
+                    badge.textContent = '已著陸';
+                    badge.classList.add('status-complete');
+                    break;
+                case 'rescuing':
+                    badge.textContent = '救援中';
+                    badge.classList.add('status-pending');
+                    break;
+                case 'waiting':
+                    badge.textContent = '等待救援';
+                    badge.style.backgroundColor = '#EA4335';
+                    badge.style.color = 'white';
+                    break;
+                default:
+                    badge.textContent = '未知狀態';
+                    badge.style.backgroundColor = '#6c757d';
+                    badge.style.color = 'white';
+            }
+        }
+        
+        // 生成組別QR碼
+        function generateGroupQRCode(guestData) {
+            const qrcodeDiv = document.getElementById('group-qrcode');
+            if (!qrcodeDiv) return;
+            
+            qrcodeDiv.innerHTML = '';
+            
+            const data = JSON.stringify({ 
+                docId: guestData.docId,
+                type: 'guestRecord'
+            });
+            
+            // 根據健康狀況獲取顏色
+            const qrColor = getQRCodeColor(guestData.healthStatus);
+            
+            const groupQRCode = new QRCodeStyling({
+                width: 150,
+                height: 150,
+                data: data,
+                image: "",
+                dotsOptions: {
+                    color: qrColor,
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#ffffff",
+                },
+                imageOptions: {
+                    crossOrigin: "anonymous",
+                    margin: 5
+                }
+            });
+            
+            groupQRCode.append(qrcodeDiv);
+        }
+        
+        // 關閉組別詳情模態框
+        window.closeGroupDetailModal = function() {
+            const modal = document.getElementById('groupDetailModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            
+            // 重新載入組別列表
+            if (currentCabin) {
+                loadGroupList(currentCabin);
+            }
+        };
+        
+        // 在新增組別時，自動設置車廂號碼
+        window.addNewGroup = function() {
+            const cabinNumber = currentCabin.fields.sequence;
+            if (!cabinNumber) {
+                alert('請先輸入車廂號碼');
+                return;
+            }
+            
+            // 打開空的組別詳情模態框
+            openGroupDetailModal({
+                cabinNumber: cabinNumber
+            });
+            
+            // 自動聚焦到組別輸入框
+            setTimeout(() => {
+                const groupNumberInput = document.getElementById('groupDetailGroupNumber');
+                if (groupNumberInput) {
+                    groupNumberInput.focus();
+                }
+            }, 100);
+        };
         
         // 初始化救援地圖
         function initRescueMap() {
@@ -3684,20 +4158,6 @@
                 loadGroupDetail(docId);
             };
             
-            // 新增組別
-            window.addNewGroup = function() {
-                const cabinNumber = currentCabin.fields.sequence;
-                if (!cabinNumber) {
-                    alert('請先輸入車廂號碼');
-                    return;
-                }
-                
-                // 打開空的組別詳情模態框
-                openGroupDetailModal({
-                    cabinNumber: cabinNumber
-                });
-            };
-            
             // 加載組別詳情
             async function loadGroupDetail(docId) {
                 try {
@@ -3725,173 +4185,6 @@
                     hideLoader();
                 }
             }
-            
-            // 打開組別詳情模態框
-            function openGroupDetailModal(guestData) {
-                const modal = document.getElementById('groupDetailModal');
-                const form = document.getElementById('groupDetailForm');
-                
-                if (!modal || !form) {
-                    console.error('找不到組別詳情模態框或表單');
-                    return;
-                }
-                
-                // 重置表單
-                form.reset();
-                
-                // 填充資料
-                if (guestData.docId) {
-                    document.getElementById('groupDetailDocId').value = guestData.docId;
-                }
-                
-                if (guestData.cabinNumber) {
-                    document.getElementById('groupDetailCabinNumber').value = guestData.cabinNumber;
-                }
-                
-                // 填充表單字段
-                const fieldMappings = {
-                    'groupNumber': 'groupDetailGroupNumber',
-                    'guestName': 'groupDetailGuestName',
-                    'contactNumber': 'groupDetailContactNumber',
-                    'gender': 'groupDetailGender',
-                    'ageRange': 'groupDetailAgeRange',
-                    'healthStatus': 'groupDetailHealthStatus',
-                    'ambulance': 'groupDetailAmbulance',
-                    'ambulancePlate': 'groupDetailAmbulancePlate',
-                    'exitMethod': 'groupDetailExitMethod',
-                    'rescuedBy': 'groupDetailRescuedBy',
-                    'timeReachedTop': 'groupDetailTimeReachedTop',
-                    'timeLanded': 'groupDetailTimeLanded',
-                    'remarks': 'groupDetailRemarks'
-                };
-                
-                for (const [dataKey, elementId] of Object.entries(fieldMappings)) {
-                    const element = document.getElementById(elementId);
-                    if (element && guestData[dataKey]) {
-                        element.value = guestData[dataKey];
-                    }
-                }
-                
-                // 處理離場時間
-                if (guestData.exitTime) {
-                    const exitTime = guestData.exitTime.toDate ? guestData.exitTime.toDate() : new Date(guestData.exitTime);
-                    document.getElementById('groupDetailExitTime').value = exitTime.toISOString().slice(0, 16);
-                }
-                
-                // 處理救援人員字段
-                if (guestData.rescuedBy) {
-                    const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
-                    const otherRescuerInput = document.getElementById('otherRescuerInput');
-                    const otherRescuerContainer = document.getElementById('otherRescuerContainer');
-                    
-                    // 檢查救援人員是否為預設選項
-                    const presetOptions = ['消防員', '民安隊', '警察', 'NP360職員'];
-                    if (presetOptions.includes(guestData.rescuedBy)) {
-                        rescuedBySelect.value = guestData.rescuedBy;
-                        otherRescuerContainer.style.display = 'none';
-                    } else {
-                        // 如果不是預設選項，設置為"其他"並顯示輸入框
-                        rescuedBySelect.value = '其他';
-                        otherRescuerInput.value = guestData.rescuedBy;
-                        otherRescuerContainer.style.display = 'block';
-                    }
-                }
-                
-                // 更新組別狀態徽章
-                updateGroupStatusBadge(guestData);
-                
-                // 顯示模態框
-                modal.style.display = 'flex';
-                
-                // 生成QR碼
-                generateGroupQRCode(guestData);
-                
-                // 設置救護車需求顯示
-                toggleGroupAmbulancePlate();
-                
-                // 設置救援人員顯示
-                toggleOtherRescuerInput();
-            }
-            
-            // 更新組別狀態徽章
-            function updateGroupStatusBadge(guestData) {
-                const badge = document.getElementById('group-status-badge');
-                if (!badge) return;
-                
-                badge.className = 'status-badge';
-                
-                // 使用新的狀態判斷函數
-                const groupStatus = getGroupRescueStatus(guestData);
-                
-                switch(groupStatus) {
-                    case 'landed':
-                        badge.textContent = '已著陸';
-                        badge.classList.add('status-complete');
-                        break;
-                    case 'rescuing':
-                        badge.textContent = '救援中';
-                        badge.classList.add('status-pending');
-                        break;
-                    case 'waiting':
-                        badge.textContent = '等待救援';
-                        badge.style.backgroundColor = '#EA4335';
-                        badge.style.color = 'white';
-                        break;
-                    default:
-                        badge.textContent = '未知狀態';
-                        badge.style.backgroundColor = '#6c757d';
-                        badge.style.color = 'white';
-                }
-            }
-            
-            // 生成組別QR碼
-            function generateGroupQRCode(guestData) {
-                const qrcodeDiv = document.getElementById('group-qrcode');
-                if (!qrcodeDiv) return;
-                
-                qrcodeDiv.innerHTML = '';
-                
-                const data = JSON.stringify({ 
-                    docId: guestData.docId,
-                    type: 'guestRecord'
-                });
-                
-                // 根據健康狀況獲取顏色
-                const qrColor = getQRCodeColor(guestData.healthStatus);
-                
-                const groupQRCode = new QRCodeStyling({
-                    width: 150,
-                    height: 150,
-                    data: data,
-                    image: "",
-                    dotsOptions: {
-                        color: qrColor,
-                        type: "rounded"
-                    },
-                    backgroundOptions: {
-                        color: "#ffffff",
-                    },
-                    imageOptions: {
-                        crossOrigin: "anonymous",
-                        margin: 5
-                    }
-                });
-                
-                groupQRCode.append(qrcodeDiv);
-            }
-            
-            // 關閉組別詳情模態框
-            window.closeGroupDetailModal = function() {
-                const modal = document.getElementById('groupDetailModal');
-                if (modal) {
-                    modal.style.display = 'none';
-                }
-                
-                // 重新載入組別列表
-                if (currentCabin) {
-                    loadGroupList(currentCabin);
-                }
-            };
             
             // 加載組別狀態
             async function loadGroupStatus(cabin) {
@@ -4472,99 +4765,6 @@
                 }, 500);
             };
         }
-        
-        // 組別詳情表單提交
-        document.getElementById('groupDetailForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            try {
-                showLoader();
-                
-                const form = document.getElementById('groupDetailForm');
-                const formData = new FormData(form);
-                const guestData = {};
-                
-                for (const [key, value] of formData.entries()) {
-                    guestData[key] = value;
-                }
-                
-                // 處理救援人員字段
-                const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
-                const otherRescuerInput = document.getElementById('otherRescuerInput');
-                
-                if (rescuedBySelect.value === '其他' && otherRescuerInput.value) {
-                    // 如果選擇"其他"且有輸入值，使用輸入的值
-                    guestData.rescuedBy = otherRescuerInput.value;
-                } else if (rescuedBySelect.value && rescuedBySelect.value !== '其他') {
-                    // 如果選擇了預設選項，使用選項的值
-                    guestData.rescuedBy = rescuedBySelect.value;
-                } else {
-                    // 否則清空救援人員字段
-                    guestData.rescuedBy = '';
-                }
-                
-                // 檢查必填字段
-                if (!guestData.cabinNumber || !guestData.groupNumber || !guestData.healthStatus) {
-                    alert('請填寫所有必填字段（車廂號碼、組別、健康狀況）');
-                    return;
-                }
-                
-                // 檢查救護車需求
-                if (guestData.ambulance === '需要' && !guestData.ambulancePlate) {
-                    alert('請輸入救護車車牌號碼');
-                    return;
-                }
-                
-                const docId = guestData.docId;
-                delete guestData.docId;
-                
-                // 問題1修復：檢查重複記錄
-                const existingRecord = await findExistingGuestRecord(guestData.cabinNumber, guestData.groupNumber);
-                
-                if (existingRecord && existingRecord.docId !== docId) {
-                    // 發現重複記錄，詢問用戶是否合併
-                    if (confirm(`發現重複記錄（車廂 ${guestData.cabinNumber}，組別 ${guestData.groupNumber}），是否合併到現有記錄？`)) {
-                        // 合併到現有記錄
-                        await db.collection('guests').doc(existingRecord.docId).update({
-                            ...guestData,
-                            updatedAt: new Date()
-                        });
-                        
-                        alert('記錄已成功合併');
-                        closeGroupDetailModal();
-                        return;
-                    } else {
-                        // 用戶取消，不進行保存
-                        return;
-                    }
-                }
-                
-                // 保存記錄
-                if (docId) {
-                    // 更新現有記錄
-                    await db.collection('guests').doc(docId).update({
-                        ...guestData,
-                        updatedAt: new Date()
-                    });
-                } else {
-                    // 創建新記錄
-                    await db.collection('guests').add({
-                        ...guestData,
-                        createdAt: new Date(),
-                        status: 'pending'
-                    });
-                }
-                
-                alert('組別記錄保存成功');
-                closeGroupDetailModal();
-                
-            } catch (error) {
-                console.error('保存組別記錄失敗:', error);
-                alert('保存失敗: ' + error.message);
-            } finally {
-                hideLoader();
-            }
-        });
         
         // 添加時間清除按鈕
         function addTimeClearButtons() {
