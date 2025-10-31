@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>纜車救援總監控平台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4285F4;
+            --secondary: #34A853;
+            --danger: #EA4335;
+            --warning: #FBBC05;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --light-blue: #e3f2fd;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        body {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            height: 100vh;
+            padding: 10px;
+        }
+        
+        .dashboard-section {
+            background: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .section-header {
+            background: #3d3d3d;
+            padding: 12px 15px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-content {
+            flex: 1;
+            overflow: auto;
+            padding: 15px;
+        }
+        
+        /* 救援地圖樣式 */
+        #rescue-map {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #map {
+            width: 100%;
+            flex: 1;
+            background: #1e3a5f;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+        
+        .summary-enhanced {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+            padding: 10px;
+            background: #3d3d3d;
+            border-radius: 6px;
+        }
+        
+        .status-counter {
+            text-align: center;
+            padding: 8px;
+            min-width: 100px;
+        }
+        
+        .status-counter.waiting {
+            border-left: 4px solid #EA4335;
+        }
+        
+        .status-counter.rescuing {
+            border-left: 4px solid #FBBC05;
+        }
+        
+        .status-counter.landed {
+            border-left: 4px solid #34A853;
+        }
+        
+        .counter-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .counter-label {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        
+        .cabin-numbers {
+            margin-top: 5px;
+            font-size: 0.7rem;
+            color: #ccc;
+            max-height: 40px;
+            overflow-y: auto;
+        }
+        
+        /* 即時監控數據樣式 */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card {
+            background: #3d3d3d;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-card i {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        
+        .stat-card .number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        .health-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .health-stat-card {
+            background: #3d3d3d;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .health-stat-card .number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .health-stat-card.green { border-left: 4px solid #34A853; }
+        .health-stat-card.yellow { border-left: 4px solid #FBBC05; }
+        .health-stat-card.red { border-left: 4px solid #EA4335; }
+        .health-stat-card.black { border-left: 4px solid #5f6368; }
+        
+        /* 救援時間棒形圖樣式 */
+        .chart-container {
+            height: 100%;
+            position: relative;
+        }
+        
+        /* 救援監測系統樣式 */
+        .search-box {
+            margin-bottom: 15px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #3d3d3d;
+            color: #fff;
+        }
+        
+        .monitor-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        
+        .monitor-table th {
+            background: #3d3d3d;
+            color: #fff;
+            text-align: left;
+            padding: 10px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .monitor-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .monitor-table tr:nth-child(even) {
+            background: #353535;
+        }
+        
+        .monitor-table tr:hover {
+            background: #404040;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-complete {
+            background: #2e7d32;
+            color: white;
+        }
+        
+        .status-pending {
+            background: #f57c00;
+            color: white;
+        }
+        
+        .status-waiting {
+            background: #c62828;
+            color: white;
+        }
+        
+        /* 自定義滾動條 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        
+        /* 狀態指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-red { background-color: #EA4335; }
+        .status-yellow { background-color: #FBBC05; }
+        .status-green { background-color: #34A853; }
+        
+        /* 實時更新指示器 */
+        .update-indicator {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #34A853;
+            margin-left: 5px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* 車廂模式選擇器 */
+        .cabin-mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .mode-btn {
+            padding: 6px 12px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #3d3d3d;
+            color: #aaa;
+            cursor: pointer;
+        }
+        
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 救援地圖 -->
+        <div id="rescue-map" class="dashboard-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-map-marked-alt"></i> 救援地圖
+                    <span class="update-indicator" id="map-update-indicator"></span>
+                </div>
+                <div style="font-size: 0.8rem; color: #aaa;">
+                    最後更新: <span id="last-map-update">--:--:--</span>
+                </div>
+            </div>
+            <div class="section-content">
+                <div class="cabin-mode-selector">
+                    <button class="mode-btn active" onclick="setCabinMode(84)">84車廂模式</button>
+                    <button class="mode-btn" onclick="setCabinMode(109)">109車廂模式</button>
+                </div>
+                <div class="summary-enhanced">
+                    <div class="status-counter waiting">
+                        <div class="counter-number" id="waiting-count">0</div>
+                        <div class="counter-label">
+                            <span class="status-indicator status-red"></span>等待救援
+                        </div>
+                        <div class="cabin-numbers" id="waiting-cabins"></div>
+                    </div>
+                    <div class="status-counter rescuing">
+                        <div class="counter-number" id="rescuing-count">0</div>
+                        <div class="counter-label">
+                            <span class="status-indicator status-yellow"></span>救援中
+                        </div>
+                        <div class="cabin-numbers" id="rescuing-cabins"></div>
+                    </div>
+                    <div class="status-counter landed">
+                        <div class="counter-number" id="landed-count">0</div>
+                        <div class="counter-label">
+                            <span class="status-indicator status-green"></span>已著陸
+                        </div>
+                        <div class="cabin-numbers" id="landed-cabins"></div>
+                    </div>
+                </div>
+                <svg id="map" viewBox="0 0 2000 700">
+                    <!-- 地圖SVG內容將由JavaScript動態生成 -->
+                </svg>
+            </div>
+        </div>
+        
+        <!-- 即時監控數據 -->
+        <div id="real-time-data" class="dashboard-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-chart-line"></i> 即時監控數據
+                    <span class="update-indicator" id="data-update-indicator"></span>
+                </div>
+                <div style="font-size: 0.8rem; color: #aaa;">
+                    最後更新: <span id="last-data-update">--:--:--</span>
+                </div>
+            </div>
+            <div class="section-content">
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="number" id="totalRecords">0</div>
+                        <div class="label">總記錄數</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="number" id="completedRecords">0</div>
+                        <div class="label">已完成</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-hourglass-half"></i>
+                        <div class="number" id="pendingRecords">0</div>
+                        <div class="label">處理中</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-ambulance"></i>
+                        <div class="number" id="ambulanceNeeded">0</div>
+                        <div class="label">需要救護車</div>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px; color: #fff;">健康狀況統計</h4>
+                <div class="health-stats">
+                    <div class="health-stat-card green">
+                        <div class="number" id="green-count">0</div>
+                        <div class="label">綠色(第三優先)</div>
+                    </div>
+                    <div class="health-stat-card yellow">
+                        <div class="number" id="yellow-count">0</div>
+                        <div class="label">黃色(第二優先)</div>
+                    </div>
+                    <div class="health-stat-card red">
+                        <div class="number" id="red-count">0</div>
+                        <div class="label">紅色(第一優先)</div>
+                    </div>
+                    <div class="health-stat-card black">
+                        <div class="number" id="black-count">0</div>
+                        <div class="label">黑色(死亡/存活無望)</div>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px; color: #fff;">救援狀態分佈</h4>
+                <div class="health-stats">
+                    <div class="health-stat-card" style="border-left: 4px solid #EA4335;">
+                        <div class="number" id="waiting-groups">0</div>
+                        <div class="label">等待救援組別</div>
+                    </div>
+                    <div class="health-stat-card" style="border-left: 4px solid #FBBC05;">
+                        <div class="number" id="rescuing-groups">0</div>
+                        <div class="label">救援中組別</div>
+                    </div>
+                    <div class="health-stat-card" style="border-left: 4px solid #34A853;">
+                        <div class="number" id="landed-groups">0</div>
+                        <div class="label">已著陸組別</div>
+                    </div>
+                    <div class="health-stat-card" style="border-left: 4px solid #4285F4;">
+                        <div class="number" id="total-groups">0</div>
+                        <div class="label">總組別數</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 救援時間棒形圖 -->
+        <div id="rescue-time-chart" class="dashboard-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-chart-bar"></i> 救援時間分析
+                    <span class="update-indicator" id="chart-update-indicator"></span>
+                </div>
+                <div style="font-size: 0.8rem; color: #aaa;">
+                    最後更新: <span id="last-chart-update">--:--:--</span>
+                </div>
+            </div>
+            <div class="section-content">
+                <div class="chart-container">
+                    <canvas id="timeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 救援監測系統 -->
+        <div id="rescue-monitor" class="dashboard-section">
+            <div class="section-header">
+                <div class="section-title">
+                    <i class="fas fa-binoculars"></i> 救援監測系統
+                    <span class="update-indicator" id="monitor-update-indicator"></span>
+                </div>
+                <div style="font-size: 0.8rem; color: #aaa;">
+                    最後更新: <span id="last-monitor-update">--:--:--</span>
+                </div>
+            </div>
+            <div class="section-content">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜尋車廂號碼、組別或姓名" 
+                           oninput="filterMonitorRecords()">
+                </div>
+                <table class="monitor-table">
+                    <thead>
+                        <tr>
+                            <th>車廂</th>
+                            <th>組別</th>
+                            <th>開始救援時間</th>
+                            <th>結束救援時間</th>
+                            <th>狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monitor-records-list">
+                        <!-- 記錄將動態載入 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase配置 (使用與主系統相同的配置)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgSaPKhaaX9cP1tY-ThykJvo_sJtVyyDc",
+            authDomain: "qrcodesystem-bceda.firebaseapp.com",
+            databaseURL: "https://qrcodesystem-bceda-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "qrcodesystem-bceda",
+            storageBucket: "qrcodesystem-bceda.firebasestorage.app",
+            messagingSenderId: "253231467455",
+            appId: "1:253231467455:web:5eb19df93b8b621ec6af0a"
+        };
+
+        // 初始化Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+        
+        // 全局變數
+        let allRecords = [];
+        let timeChart = null;
+        let cabins = [];
+        let cabinMode = 84; // 默認84車廂模式
+        let ropePts = []; // 繩索路線點
+        
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化圖表
+            initTimeChart();
+            
+            // 初始化救援地圖
+            initRescueMap();
+            
+            // 載入數據
+            loadAllData();
+            
+            // 設置實時監聽器
+            setupRealTimeListeners();
+            
+            // 設置自動刷新
+            setInterval(loadAllData, 30000); // 每30秒刷新一次
+        });
+        
+        // 初始化救援時間圖表
+        function initTimeChart() {
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            timeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-15分', '15-30分', '30-45分', '45-60分', '60分以上'],
+                    datasets: [{
+                        label: '救援時間分佈',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: [
+                            'rgba(52, 168, 83, 0.7)',
+                            'rgba(66, 133, 244, 0.7)',
+                            'rgba(251, 188, 5, 0.7)',
+                            'rgba(255, 152, 0, 0.7)',
+                            'rgba(234, 67, 53, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 168, 83, 1)',
+                            'rgba(66, 133, 244, 1)',
+                            'rgba(251, 188, 5, 1)',
+                            'rgba(255, 152, 0, 1)',
+                            'rgba(234, 67, 53, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#e0e0e0'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e0e0e0'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '救援時間分佈 (分鐘)',
+                            color: '#e0e0e0',
+                            font: {
+                                size: 16
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化救援地圖
+        function initRescueMap() {
+            // 定義繩索路線點 (與主系統相同)
+            const segments = ["TC","T1","T2A","AIAS","T2B","T3","T4","T5","NLS","T6","T7","NP"];
+            const slots = [2,2,2,2,10,6,5,1,2,7,3];
+            const startX = 100, endX = 1900, unit = (endX - startX) / 42;
+            const baseY = 600, topY = 300, npY = 340;
+            let x = startX;
+            const xCoords = [x];
+            
+            for(let i = 0; i < slots.length; i++) {
+                x += slots[i] * unit;
+                xCoords.push(x);
+            }
+            
+            const t2bX = xCoords[4], t3X = xCoords[5], nlsX = xCoords[8], npX = xCoords[11];
+            
+            // 背景
+            const svg = document.getElementById("map");
+            
+            // 清除現有內容
+            svg.innerHTML = '';
+            
+            // 定義SVG元素
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            
+            // 漸變定義
+            const gradMountain = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+            gradMountain.setAttribute("id", "gradMountain");
+            gradMountain.setAttribute("x1", "0");
+            gradMountain.setAttribute("y1", "1");
+            gradMountain.setAttribute("x2", "0");
+            gradMountain.setAttribute("y2", "0");
+            
+            const stop1 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+            stop1.setAttribute("offset", "0%");
+            stop1.setAttribute("stop-color", "#388E3C");
+            
+            const stop2 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+            stop2.setAttribute("offset", "100%");
+            stop2.setAttribute("stop-color", "#A5D6A7");
+            
+            gradMountain.appendChild(stop1);
+            gradMountain.appendChild(stop2);
+            defs.appendChild(gradMountain);
+            
+            const gradBay = document.createElementNS("http://www.w3.org/2000/svg", "linearGradient");
+            gradBay.setAttribute("id", "gradBay");
+            gradBay.setAttribute("x1", "0");
+            gradBay.setAttribute("y1", "0");
+            gradBay.setAttribute("x2", "0");
+            gradBay.setAttribute("y2", "1");
+            
+            const stop3 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+            stop3.setAttribute("offset", "0%");
+            stop3.setAttribute("stop-color", "#81D4FA");
+            
+            const stop4 = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+            stop4.setAttribute("offset", "100%");
+            stop4.setAttribute("stop-color", "#0288D1");
+            
+            gradBay.appendChild(stop3);
+            gradBay.appendChild(stop4);
+            defs.appendChild(gradBay);
+            
+            // 高亮效果
+            const highlightGlow = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+            highlightGlow.setAttribute("id", "highlightGlow");
+            
+            const feDropShadow = document.createElementNS("http://www.w3.org/2000/svg", "feDropShadow");
+            feDropShadow.setAttribute("dx", "0");
+            feDropShadow.setAttribute("dy", "0");
+            feDropShadow.setAttribute("stdDeviation", "6");
+            feDropShadow.setAttribute("flood-color", "gold");
+            
+            highlightGlow.appendChild(feDropShadow);
+            defs.appendChild(highlightGlow);
+            
+            svg.appendChild(defs);
+            
+            // 背景
+            function addRect(x, y, w, h, cls) {
+                const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                r.setAttribute("x", x);
+                r.setAttribute("y", y);
+                r.setAttribute("width", w);
+                r.setAttribute("height", h);
+                r.setAttribute("class", cls);
+                svg.appendChild(r);
+            }
+            
+            addRect(xCoords[0], baseY, t2bX - xCoords[0], 100, "city");
+            addRect(t2bX, baseY, t3X - t2bX, 100, "sea");
+            
+            // 山脈
+            const mountain = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            mountain.setAttribute("d", `M${t3X},${baseY} L${nlsX},${topY} L${npX},${npY} L${npX},700 L${t3X},700 Z`);
+            mountain.setAttribute("class", "mountain");
+            mountain.setAttribute("fill", "url(#gradMountain)");
+            svg.appendChild(mountain);
+            
+            // 地面點 + 塔台/站點
+            let groundPts = [];
+            segments.forEach((s, i) => {
+                let gx = xCoords[i], gy = baseY;
+                if(s === "NLS") gy = topY;
+                else if(s === "NP") gy = npY;
+                else if(s === "T3" || (i > 5 && i < segments.indexOf("NLS"))) gy = baseY - (baseY - topY) * ((gx - t3X) / (nlsX - t3X));
+                else if(i > segments.indexOf("NLS")) gy = topY + (npY - topY) * ((gx - nlsX) / (npX - nlsX));
+                groundPts.push([gx, gy]);
+                
+                // 簡單的站點標記
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", gx);
+                circle.setAttribute("cy", gy);
+                circle.setAttribute("r", "8");
+                circle.setAttribute("fill", "#fff");
+                circle.setAttribute("stroke", "#444");
+                circle.setAttribute("stroke-width", "2");
+                svg.appendChild(circle);
+                
+                // 站點標籤
+                const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                t.textContent = s;
+                t.setAttribute("x", gx);
+                t.setAttribute("y", gy + 25);
+                t.setAttribute("text-anchor", "middle");
+                t.setAttribute("class", "label");
+                t.setAttribute("fill", "#fff");
+                t.setAttribute("font-size", "14");
+                svg.appendChild(t);
+            });
+            
+            // 繩索
+            const up = groundPts.map(p => [p[0], p[1] - 60]);
+            const down = groundPts.map(p => [p[0], p[1] + 60]).reverse();
+            ropePts = [...up, ...down, [up[0][0], up[0][1]]];
+            
+            const rope = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            rope.setAttribute("points", ropePts.map(p => p.join(",")).join(" "));
+            rope.setAttribute("class", "rope");
+            rope.setAttribute("fill", "none");
+            rope.setAttribute("stroke", "#444");
+            rope.setAttribute("stroke-width", "3");
+            svg.appendChild(rope);
+            
+            // 圖例
+            const legend = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            legend.setAttribute("transform", "translate(1600,460)");
+            
+            const legendRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            legendRect.setAttribute("x", "0");
+            legendRect.setAttribute("y", "0");
+            legendRect.setAttribute("width", "320");
+            legendRect.setAttribute("height", "160");
+            legendRect.setAttribute("fill", "white");
+            legendRect.setAttribute("stroke", "#333");
+            legend.appendChild(legendRect);
+            
+            const legendTitle = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            legendTitle.textContent = "車廂狀態";
+            legendTitle.setAttribute("x", "160");
+            legendTitle.setAttribute("y", "30");
+            legendTitle.setAttribute("font-size", "20");
+            legendTitle.setAttribute("font-weight", "bold");
+            legendTitle.setAttribute("text-anchor", "middle");
+            legendTitle.setAttribute("fill", "#333");
+            legend.appendChild(legendTitle);
+            
+            // 等待圖例
+            const waitingLegend = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            waitingLegend.setAttribute("transform", "translate(25,60)");
+            
+            const waitingRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            waitingRect.setAttribute("width", "26");
+            waitingRect.setAttribute("height", "26");
+            waitingRect.setAttribute("fill", "red");
+            waitingRect.setAttribute("stroke", "#333");
+            waitingLegend.appendChild(waitingRect);
+            
+            const waitingText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            waitingText.textContent = "等待";
+            waitingText.setAttribute("x", "40");
+            waitingText.setAttribute("y", "19");
+            waitingText.setAttribute("font-size", "16");
+            waitingText.setAttribute("fill", "#333");
+            waitingLegend.appendChild(waitingText);
+            
+            legend.appendChild(waitingLegend);
+            
+            // 救援中圖例
+            const rescuingLegend = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            rescuingLegend.setAttribute("transform", "translate(25,95)");
+            
+            const rescuingRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rescuingRect.setAttribute("width", "26");
+            rescuingRect.setAttribute("height", "26");
+            rescuingRect.setAttribute("fill", "yellow");
+            rescuingRect.setAttribute("stroke", "#333");
+            rescuingLegend.appendChild(rescuingRect);
+            
+            const rescuingText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            rescuingText.textContent = "救援中";
+            rescuingText.setAttribute("x", "40");
+            rescuingText.setAttribute("y", "19");
+            rescuingText.setAttribute("font-size", "16");
+            rescuingText.setAttribute("fill", "#333");
+            rescuingLegend.appendChild(rescuingText);
+            
+            legend.appendChild(rescuingLegend);
+            
+            // 已著陸圖例
+            const landedLegend = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            landedLegend.setAttribute("transform", "translate(25,130)");
+            
+            const landedRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            landedRect.setAttribute("width", "26");
+            landedRect.setAttribute("height", "26");
+            landedRect.setAttribute("fill", "lime");
+            landedRect.setAttribute("stroke", "#333");
+            landedLegend.appendChild(landedRect);
+            
+            const landedText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            landedText.textContent = "已著陸";
+            landedText.setAttribute("x", "40");
+            landedText.setAttribute("y", "19");
+            landedText.setAttribute("font-size", "16");
+            landedText.setAttribute("fill", "#333");
+            landedLegend.appendChild(landedText);
+            
+            legend.appendChild(landedLegend);
+            
+            svg.appendChild(legend);
+            
+            console.log("救援地圖初始化完成");
+        }
+        
+        // 載入所有數據
+        async function loadAllData() {
+            try {
+                await Promise.all([
+                    loadGuestRecords(),
+                    loadCabinData()
+                ]);
+                
+                updateAllDisplays();
+                updateLastUpdateTime();
+            } catch (error) {
+                console.error('載入數據失敗:', error);
+            }
+        }
+        
+        // 載入賓客記錄
+        async function loadGuestRecords() {
+            try {
+                const snapshot = await db.collection('guests').get();
+                allRecords = [];
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    
+                    // 確保時間字段正確處理
+                    if (data.createdAt && data.createdAt.toDate) {
+                        data.createdAt = data.createdAt.toDate();
+                    }
+                    if (data.updatedAt && data.updatedAt.toDate) {
+                        data.updatedAt = data.updatedAt.toDate();
+                    }
+                    if (data.exitTime && data.exitTime.toDate) {
+                        data.exitTime = data.exitTime.toDate();
+                    }
+                    
+                    allRecords.push(data);
+                });
+                
+                console.log(`載入了 ${allRecords.length} 筆記錄`);
+            } catch (error) {
+                console.error('載入賓客記錄失敗:', error);
+            }
+        }
+        
+        // 載入車廂數據
+        async function loadCabinData() {
+            try {
+                const snapshot = await realtimeDb.ref("cabins").once("value");
+                const data = snapshot.val();
+                
+                if (data) {
+                    cabins = Object.keys(data).map(key => {
+                        return {
+                            id: key,
+                            fields: data[key] || {}
+                        };
+                    });
+                    console.log(`載入了 ${cabins.length} 個車廂數據`);
+                } else {
+                    cabins = [];
+                    console.log("未找到車廂數據");
+                }
+            } catch (error) {
+                console.error('載入車廂數據失敗:', error);
+            }
+        }
+        
+        // 更新所有顯示
+        function updateAllDisplays() {
+            updateRealTimeData();
+            updateRescueMap();
+            updateTimeChart();
+            updateMonitorTable();
+        }
+        
+        // 更新即時數據
+        function updateRealTimeData() {
+            // 基本統計
+            const total = allRecords.length;
+            const completed = allRecords.filter(r => r.status === 'completed').length;
+            const pending = allRecords.filter(r => r.status !== 'completed').length;
+            const ambulanceNeeded = allRecords.filter(r => r.ambulance === '需要').length;
+            
+            document.getElementById('totalRecords').textContent = total;
+            document.getElementById('completedRecords').textContent = completed;
+            document.getElementById('pendingRecords').textContent = pending;
+            document.getElementById('ambulanceNeeded').textContent = ambulanceNeeded;
+            
+            // 健康狀況統計
+            const greenCount = allRecords.filter(r => r.healthStatus && r.healthStatus.includes('綠色')).length;
+            const yellowCount = allRecords.filter(r => r.healthStatus && r.healthStatus.includes('黃色')).length;
+            const redCount = allRecords.filter(r => r.healthStatus && r.healthStatus.includes('紅色')).length;
+            const blackCount = allRecords.filter(r => r.healthStatus && r.healthStatus.includes('黑色')).length;
+            
+            document.getElementById('green-count').textContent = greenCount;
+            document.getElementById('yellow-count').textContent = yellowCount;
+            document.getElementById('red-count').textContent = redCount;
+            document.getElementById('black-count').textContent = blackCount;
+            
+            // 救援狀態統計
+            const waitingGroups = allRecords.filter(r => getGroupRescueStatus(r) === 'waiting').length;
+            const rescuingGroups = allRecords.filter(r => getGroupRescueStatus(r) === 'rescuing').length;
+            const landedGroups = allRecords.filter(r => getGroupRescueStatus(r) === 'landed').length;
+            
+            document.getElementById('waiting-groups').textContent = waitingGroups;
+            document.getElementById('rescuing-groups').textContent = rescuingGroups;
+            document.getElementById('landed-groups').textContent = landedGroups;
+            document.getElementById('total-groups').textContent = total;
+        }
+        
+        // 更新救援地圖
+        function updateRescueMap() {
+            // 清除現有車廂
+            const svg = document.getElementById('map');
+            const existingCabins = svg.querySelectorAll('.cabin');
+            existingCabins.forEach(cabin => cabin.remove());
+            
+            // 統計車廂狀態
+            let waiting = 0, rescuing = 0, landed = 0;
+            const waitingCabins = [], rescuingCabins = [], landedCabins = [];
+            
+            // 根據車廂模式創建車廂
+            for (let i = 0; i < cabinMode; i++) {
+                const cabinId = `cabin-${i}`;
+                const cabinData = cabins.find(c => c.id === cabinId);
+                const sequence = cabinData ? cabinData.fields.sequence : null;
+                
+                // 查找該車廂的所有組別
+                const cabinGroups = allRecords.filter(record => 
+                    record.cabinNumber === sequence
+                );
+                
+                // 確定車廂狀態
+                let status = 'empty';
+                if (cabinGroups.length > 0) {
+                    // 使用與主系統相同的狀態判斷邏輯
+                    const landedGroups = cabinGroups.filter(g => getGroupRescueStatus(g) === 'landed').length;
+                    const rescuingGroups = cabinGroups.filter(g => getGroupRescueStatus(g) === 'rescuing').length;
+                    const waitingGroups = cabinGroups.filter(g => getGroupRescueStatus(g) === 'waiting').length;
+                    const totalGroups = cabinGroups.length;
+                    
+                    if (landedGroups === totalGroups && totalGroups > 0) {
+                        status = 'landed';
+                        landed++;
+                        if (sequence) landedCabins.push(sequence);
+                    } else if (waitingGroups === 0 && rescuingGroups > 0) {
+                        status = 'rescuing';
+                        rescuing++;
+                        if (sequence) rescuingCabins.push(sequence);
+                    } else if (waitingGroups > 0) {
+                        status = 'waiting';
+                        waiting++;
+                        if (sequence) waitingCabins.push(sequence);
+                    } else {
+                        status = 'waiting';
+                        waiting++;
+                        if (sequence) waitingCabins.push(sequence);
+                    }
+                }
+                
+                // 創建車廂標記
+                const cabinGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                cabinGroup.setAttribute("class", `cabin ${status !== 'empty' ? `status-${status}` : ''}`);
+                
+                // 計算車廂位置 (使用與主系統相同的邏輯)
+                const ropeLen = lengthOf(ropePts);
+                const d = (i * ropeLen / cabinMode) % ropeLen;
+                const pos = pointAt(ropePts, d);
+                
+                // 車廂形狀 - 六邊形
+                const hexagon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                const size = cabinMode === 109 ? 14 : 18;
+                const points = [];
+                
+                for (let j = 0; j < 6; j++) {
+                    const angle = Math.PI / 3 * j;
+                    const x = size * Math.cos(angle) + pos.x;
+                    const y = size * Math.sin(angle) + pos.y;
+                    points.push(`${x},${y}`);
+                }
+                
+                hexagon.setAttribute("points", points.join(" "));
+                
+                // 根據狀態設置顏色
+                if (status === 'waiting') hexagon.setAttribute("fill", "#EA4335");
+                else if (status === 'rescuing') hexagon.setAttribute("fill", "#FBBC05");
+                else if (status === 'landed') hexagon.setAttribute("fill", "#34A853");
+                else hexagon.setAttribute("fill", "#666");
+                
+                hexagon.setAttribute("stroke", "#333");
+                hexagon.setAttribute("stroke-width", "2");
+                
+                cabinGroup.appendChild(hexagon);
+                
+                // 添加車廂號碼標籤
+                if (sequence) {
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", pos.x);
+                    text.setAttribute("y", pos.y + 5);
+                    text.setAttribute("text-anchor", "middle");
+                    text.setAttribute("dominant-baseline", "middle");
+                    text.setAttribute("fill", "#fff");
+                    text.setAttribute("font-size", "12");
+                    text.setAttribute("font-weight", "bold");
+                    text.textContent = sequence;
+                    
+                    cabinGroup.appendChild(text);
+                }
+                
+                svg.appendChild(cabinGroup);
+            }
+            
+            // 更新摘要
+            document.getElementById("waiting-count").textContent = waiting;
+            document.getElementById("rescuing-count").textContent = rescuing;
+            document.getElementById("landed-count").textContent = landed;
+            
+            document.getElementById("waiting-cabins").textContent = waitingCabins.join(', ');
+            document.getElementById("rescuing-cabins").textContent = rescuingCabins.join(', ');
+            document.getElementById("landed-cabins").textContent = landedCabins.join(', ');
+            
+            console.log(`救援地圖更新完成: ${waiting}等待, ${rescuing}救援中, ${landed}已著陸`);
+        }
+        
+        // 計算路線長度
+        function lengthOf(pts) {
+            let L = 0;
+            for(let i = 0; i < pts.length - 1; i++) {
+                L += Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]);
+            }
+            return L;
+        }
+        
+        // 計算路線上的點
+        function pointAt(pts, d) {
+            let sum = 0;
+            for(let i = 0; i < pts.length - 1; i++) {
+                const [x1, y1] = pts[i], [x2, y2] = pts[i+1];
+                const seg = Math.hypot(x2 - x1, y2 - y1);
+                if(sum + seg >= d) {
+                    const t = (d - sum) / seg;
+                    return {x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t};
+                }
+                sum += seg;
+            }
+            return {x: pts.at(-1)[0], y: pts.at(-1)[1]};
+        }
+        
+        // 更新時間圖表
+        function updateTimeChart() {
+            // 計算救援時間分佈
+            const timeRanges = [0, 0, 0, 0, 0]; // 0-15, 15-30, 30-45, 45-60, 60+
+            
+            allRecords.forEach(record => {
+                if (record.timeReachedTop && record.timeLanded) {
+                    // 計算救援時間 (分鐘)
+                    const startTime = timeStringToMinutes(record.timeReachedTop);
+                    const endTime = timeStringToMinutes(record.timeLanded);
+                    
+                    if (startTime && endTime) {
+                        const duration = endTime - startTime;
+                        
+                        if (duration >= 0) {
+                            if (duration <= 15) timeRanges[0]++;
+                            else if (duration <= 30) timeRanges[1]++;
+                            else if (duration <= 45) timeRanges[2]++;
+                            else if (duration <= 60) timeRanges[3]++;
+                            else timeRanges[4]++;
+                        }
+                    }
+                }
+            });
+            
+            // 更新圖表
+            if (timeChart) {
+                timeChart.data.datasets[0].data = timeRanges;
+                timeChart.update();
+            }
+        }
+        
+        // 時間字符串轉換為分鐘
+        function timeStringToMinutes(timeStr) {
+            if (!timeStr) return null;
+            
+            const parts = timeStr.split(':');
+            if (parts.length >= 2) {
+                return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            }
+            return null;
+        }
+        
+        // 更新監控表格
+        function updateMonitorTable() {
+            const tableBody = document.getElementById('monitor-records-list');
+            tableBody.innerHTML = '';
+            
+            // 排序記錄：按車廂號碼和組別排序
+            const sortedRecords = [...allRecords].sort((a, b) => {
+                // 先按車廂號碼排序
+                const cabinA = a.cabinNumber || '';
+                const cabinB = b.cabinNumber || '';
+                if (cabinA !== cabinB) {
+                    return cabinA.localeCompare(cabinB, undefined, {numeric: true});
+                }
+                
+                // 再按組別排序
+                const groupA = a.groupNumber || '';
+                const groupB = b.groupNumber || '';
+                return groupA.localeCompare(groupB, undefined, {numeric: true});
+            });
+            
+            sortedRecords.forEach(record => {
+                const row = document.createElement('tr');
+                
+                // 車廂號碼
+                const cabinCell = document.createElement('td');
+                cabinCell.textContent = record.cabinNumber || '-';
+                row.appendChild(cabinCell);
+                
+                // 組別
+                const groupCell = document.createElement('td');
+                groupCell.textContent = record.groupNumber ? `第${record.groupNumber}組` : '-';
+                row.appendChild(groupCell);
+                
+                // 開始救援時間
+                const startTimeCell = document.createElement('td');
+                startTimeCell.textContent = record.timeReachedTop || '-';
+                row.appendChild(startTimeCell);
+                
+                // 結束救援時間
+                const endTimeCell = document.createElement('td');
+                endTimeCell.textContent = record.timeLanded || '-';
+                row.appendChild(endTimeCell);
+                
+                // 狀態
+                const statusCell = document.createElement('td');
+                const status = getGroupRescueStatus(record);
+                let statusText = '';
+                let statusClass = '';
+                
+                switch(status) {
+                    case 'landed':
+                        statusText = '已著陸';
+                        statusClass = 'status-complete';
+                        break;
+                    case 'rescuing':
+                        statusText = '救援中';
+                        statusClass = 'status-pending';
+                        break;
+                    case 'waiting':
+                        statusText = '等待救援';
+                        statusClass = 'status-waiting';
+                        break;
+                    default:
+                        statusText = '未知';
+                }
+                
+                const statusBadge = document.createElement('span');
+                statusBadge.className = `status-badge ${statusClass}`;
+                statusBadge.textContent = statusText;
+                statusCell.appendChild(statusBadge);
+                row.appendChild(statusCell);
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 組別救援狀態判斷函數 (與主系統相同)
+        function getGroupRescueStatus(guest) {
+            // 檢查是否存在救援相關字段
+            const hasRescueData = guest.timeReachedTop || guest.rescuedBy || guest.timeLanded;
+            const hasExitData = guest.exitTime && guest.exitMethod;
+            
+            // 如果有著陸時間，則判定為已著陸
+            if (guest.timeLanded) {
+                return 'landed';
+            }
+            
+            // 如果有離場時間且離場方式不為空，判定為已著陸
+            if (hasExitData) {
+                return 'landed';
+            }
+            
+            // 如果有到達頂部時間或救援人員，判定為救援中
+            if (guest.timeReachedTop || guest.rescuedBy) {
+                return 'rescuing';
+            }
+            
+            // 如果需要救護車，判定為救援中
+            if (guest.ambulance === '需要') {
+                return 'rescuing';
+            }
+            
+            // 默認情況為等待救援
+            return 'waiting';
+        }
+        
+        // 設置實時監聽器
+        function setupRealTimeListeners() {
+            // 監聽賓客記錄變化
+            db.collection('guests').onSnapshot(snapshot => {
+                console.log('賓客記錄更新，重新載入數據');
+                loadGuestRecords().then(() => {
+                    updateAllDisplays();
+                });
+            }, error => {
+                console.error('賓客記錄監聽錯誤:', error);
+            });
+            
+            // 監聽車廂數據變化
+            realtimeDb.ref("cabins").on("value", snapshot => {
+                console.log('車廂數據更新，重新載入數據');
+                loadCabinData().then(() => {
+                    updateRescueMap();
+                });
+            }, error => {
+                console.error('車廂數據監聽錯誤:', error);
+            });
+        }
+        
+        // 更新最後更新時間
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-TW');
+            
+            document.getElementById('last-map-update').textContent = timeString;
+            document.getElementById('last-data-update').textContent = timeString;
+            document.getElementById('last-chart-update').textContent = timeString;
+            document.getElementById('last-monitor-update').textContent = timeString;
+        }
+        
+        // 設置車廂模式
+        function setCabinMode(mode) {
+            cabinMode = mode;
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新救援地圖
+            updateRescueMap();
+        }
+        
+        // 篩選監控記錄
+        function filterMonitorRecords() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#monitor-records-list tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                let match = false;
+                
+                // 檢查車廂號碼、組別
+                if (searchInput) {
+                    const cabinNumber = cells[0].textContent.toLowerCase();
+                    const groupNumber = cells[1].textContent.toLowerCase();
+                    
+                    if (cabinNumber.includes(searchInput) || groupNumber.includes(searchInput)) {
+                        match = true;
+                    }
+                } else {
+                    match = true;
+                }
+                
+                row.style.display = match ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
