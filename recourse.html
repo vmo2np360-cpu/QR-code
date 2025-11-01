@@ -589,7 +589,6 @@
         <div id="record-tab" class="tab-content active">
             <div class="section">
                 <h2><i class="fas fa-plus-circle"></i> 記錄錄入</h2>
-                <div id="message" class="message"></div>
                 
                 <div class="card">
                     <div class="form-group">
@@ -678,6 +677,9 @@
                     <button class="btn btn-block" onclick="saveThirdPartyRecord()">
                         <i class="fas fa-save"></i> 保存求助記錄
                     </button>
+                    
+                    <!-- 在按鈕下方添加訊息顯示區域 -->
+                    <div id="save-message" class="message" style="margin-top: 15px;"></div>
                 </div>
             </div>
         </div>
@@ -849,7 +851,7 @@
         </div>
         
         <footer>
-            <p>求助記錄系統 &copy; 2025 - 獨立數據存儲，不影響主系統記錄</p>
+            <p>求助記錄系統 &copy; 2025 </p>
         </footer>
     </div>
 
@@ -966,7 +968,7 @@
             if (source === '其他') {
                 source = document.getElementById('other-source').value;
                 if (!source) {
-                    showMessage('message', '請輸入其他數據來源', 'error');
+                    showMessage('save-message', '請輸入其他數據來源', 'error');
                     return;
                 }
             }
@@ -990,7 +992,7 @@
                     processed: false
                 });
                 
-                showMessage('message', '求助記錄保存成功！', 'success');
+                showMessage('save-message', '求助記錄保存成功！', 'success');
                 
                 // 清空表單
                 document.getElementById('cabinNumber').value = '';
@@ -1014,7 +1016,7 @@
                 
             } catch (error) {
                 console.error('保存求助記錄失敗:', error);
-                showMessage('message', '保存失敗: ' + error.message, 'error');
+                showMessage('save-message', '保存失敗: ' + error.message, 'error');
             }
         }
         
