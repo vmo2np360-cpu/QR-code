@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>求助記錄系統</title>
+    <title>OCC求助信息記錄系統</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -306,6 +306,11 @@
             border-color: var(--primary);
         }
         
+        .other-contact-input {
+            margin-top: 10px;
+            display: none;
+        }
+        
         .duplicate-warning {
             background: #fff3cd;
             border: 1px solid #ffeaa7;
@@ -517,6 +522,92 @@
             gap: 15px;
         }
         
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        /* 新增：只接收短信的checkbox样式 */
+        .sms-only-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e1e5eb;
+        }
+        
+        .sms-only-checkbox {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .sms-only-label {
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sms-warning {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 0 10px;
@@ -562,6 +653,15 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .modal-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -571,7 +671,7 @@
             <div class="header-content">
                 <div class="logo">
                     <span class="logo-icon">🚠</span>
-                    <span>求助記錄系統</span>
+                    <span>OCC求助信息記錄系統</span>
                 </div>
                 <div style="font-size: 0.9rem; opacity: 0.9;">
                     獨立數據存儲，不影響主系統記錄
@@ -580,7 +680,7 @@
         </header>
         
         <div class="tabs">
-            <div class="tab active" data-tab="record">記錄錄入</div>
+            <div class="tab active" data-tab="record">求助記錄</div>
             <div class="tab" data-tab="records">記錄查看</div>
             <div class="tab" data-tab="dashboard">數據統計</div>
         </div>
@@ -588,7 +688,7 @@
         <!-- 記錄錄入標籤頁 -->
         <div id="record-tab" class="tab-content active">
             <div class="section">
-                <h2><i class="fas fa-plus-circle"></i> 記錄錄入</h2>
+                <h2><i class="fas fa-plus-circle"></i> 求助記錄</h2>
                 
                 <div class="card">
                     <div class="form-group">
@@ -610,10 +710,24 @@
                     <div class="form-group">
                         <label for="contactNumber"><i class="fas fa-phone"></i> 聯絡方式</label>
                         <input type="text" id="contactNumber" placeholder="請輸入聯絡電話">
+                        
+                        <!-- 新增：只接收短信選項 -->
+                        <div class="sms-only-container">
+                            <input type="checkbox" id="smsOnly" class="sms-only-checkbox" onchange="toggleSMSOnly()">
+                            <label for="smsOnly" class="sms-only-label">
+                                <i class="fas fa-sms"></i> 只接收短信
+                            </label>
+                        </div>
+                        <div class="sms-warning" id="sms-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 選擇「只接收短信」必須提供聯絡電話
+                        </div>
+                        
                         <div class="contact-options">
-                            <div class="contact-btn" onclick="setContactType('無電話')">無電話</div>
-                            <div class="contact-btn" onclick="setContactType('不願提供')">不願提供</div>
-                            <div class="contact-btn" onclick="setContactType('無法溝通')">無法溝通</div>
+                            <div class="contact-btn" onclick="setContactType('未能提供')">未能提供</div>
+                            <div class="contact-btn" onclick="setContactType('其他')">其他</div>
+                        </div>
+                        <div id="other-contact-input" class="other-contact-input">
+                            <input type="text" id="other-contact" placeholder="請輸入其他聯絡方式">
                         </div>
                     </div>
                     
@@ -629,10 +743,10 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="ageRange"><i class="fas fa-birthday-cake"></i> 年齡間距</label>
+                            <label for="ageRange"><i class="fas fa-birthday-cake"></i> 年齡</label>
                             <select id="ageRange">
-                                <option value="">請選擇年齡間距</option>
-                                <option value="">不便透露</option>
+                                <option value="">年齡</option>
+                                <option value="">未能提供</option>
                                 <option value="0-12">0-12歲</option>
                                 <option value="13-17">13-17歲</option>
                                 <option value="18-25">18-25歲</option>
@@ -648,21 +762,21 @@
                     <div class="form-group">
                         <label for="healthStatus"><i class="fas fa-heartbeat"></i> 健康狀況</label>
                         <select id="healthStatus">
-                            <option value="綠色(第三優先)">綠色(第三優先)正常或傷勢較輕可以自行走動</option>
-                            <option value="黃色(第二優先)">黃色(第二優先)傷勢較為嚴重需要緊急處理</option>
-                            <option value="紅色(第一優先)">紅色(第一優先)有生命危險需要立即進行搶救</option>
-                            <option value="黑色(沒有生命體徵)">黑色(沒有生命體徵)</option>
+                            <option value="綠色(第三優先)">綠色_正常或傷勢較輕可以自由走動_(第三優先)</option>
+                            <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
+                            <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
+                            <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="source"><i class="fas fa-source"></i> 數據來源</label>
+                        <label for="source"><i class="fas fa-source"></i> 求助記錄來源</label>
                         <select id="source" onchange="toggleOtherSourceInput()">
-                            <option value="">請選擇數據來源</option>
-                            <option value="警方">警方</option>
-                            <option value="消防">消防</option>
-                            <option value="NP360熱線">NP360熱線</option>
-                            <option value="其他">其他</option>
+                            <option value="">請選擇求助記錄來源</option>
+                            <option value="警察(999報案中心)">警察(999報案中心)</option>
+                            <option value="消防處">消防處</option>
+                            <option value="NP360熱線中心">NP360熱線中心</option>
+                            <option value="NP360纜車求助熱線">NP360纜車求助熱線</option>
                         </select>
                         <div id="other-source-input" class="other-source-input">
                             <input type="text" id="other-source" placeholder="請輸入其他數據來源">
@@ -707,6 +821,7 @@
                     <table class="record-table">
                         <thead>
                             <tr>
+                                <th>序號</th>
                                 <th>車廂號碼</th>
                                 <th>賓客姓名</th>
                                 <th>聯絡方式</th>
@@ -745,24 +860,9 @@
                         <div class="label">求助記錄總數</div>
                     </div>
                     <div class="stat-card">
-                        <i class="fas fa-heartbeat"></i>
-                        <div class="number" id="green-count">0</div>
-                        <div class="label">綠色(第三優先)</div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-heartbeat"></i>
-                        <div class="number" id="yellow-count">0</div>
-                        <div class="label">黃色(第二優先)</div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-heartbeat"></i>
-                        <div class="number" id="red-count">0</div>
-                        <div class="label">紅色(第一優先)</div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-heartbeat"></i>
-                        <div class="number" id="black-count">0</div>
-                        <div class="label">黑色(沒有生命體徵)</div>
+                        <i class="fas fa-clock"></i>
+                        <div class="number" id="pending-count">0</div>
+                        <div class="label">待處理記錄</div>
                     </div>
                     <div class="stat-card">
                         <i class="fas fa-check-circle"></i>
@@ -831,6 +931,7 @@
                     <table class="record-table">
                         <thead>
                             <tr>
+                                <th>序號</th>
                                 <th>車廂號碼</th>
                                 <th>賓客姓名</th>
                                 <th>聯絡方式</th>
@@ -840,6 +941,7 @@
                                 <th>數據來源</th>
                                 <th>狀態</th>
                                 <th>創建時間</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="filtered-third-party-list">
@@ -851,8 +953,103 @@
         </div>
         
         <footer>
-            <p>求助記錄系統 &copy; 2025 </p>
+            <p>OCC求助信息記錄系統 &copy; 2025 </p>
         </footer>
+    </div>
+
+    <!-- 編輯記錄模態框 -->
+    <div id="edit-record-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-edit"></i> 編輯求助記錄</h3>
+                <button class="close-modal" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit-cabinNumber"><i class="fas fa-train"></i> 車廂號碼</label>
+                    <input type="text" id="edit-cabinNumber" placeholder="1-125">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-guestName"><i class="fas fa-user"></i> 賓客姓名</label>
+                    <input type="text" id="edit-guestName" placeholder="請輸入賓客全名">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-contactNumber"><i class="fas fa-phone"></i> 聯絡方式</label>
+                    <input type="text" id="edit-contactNumber" placeholder="請輸入聯絡電話">
+                    
+                    <!-- 新增：編輯模態框中的只接收短信選項 -->
+                    <div class="sms-only-container">
+                        <input type="checkbox" id="edit-smsOnly" class="sms-only-checkbox" onchange="toggleEditSMSOnly()">
+                        <label for="edit-smsOnly" class="sms-only-label">
+                            <i class="fas fa-sms"></i> 只接收短信
+                        </label>
+                    </div>
+                    <div class="sms-warning" id="edit-sms-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 選擇「只接收短信」必須提供聯絡電話
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-gender"><i class="fas fa-venus-mars"></i> 性別</label>
+                        <select id="edit-gender">
+                            <option value="">請選擇性別</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-ageRange"><i class="fas fa-birthday-cake"></i> 年齡</label>
+                        <select id="edit-ageRange">
+                            <option value="">年齡</option>
+                            <option value="">未能提供</option>
+                            <option value="0-12">0-12歲</option>
+                            <option value="13-17">13-17歲</option>
+                            <option value="18-25">18-25歲</option>
+                            <option value="26-35">26-35歲</option>
+                            <option value="36-45">36-45歲</option>
+                            <option value="46-55">46-55歲</option>
+                            <option value="56-65">56-65歲</option>
+                            <option value="66+">66歲以上</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-healthStatus"><i class="fas fa-heartbeat"></i> 健康狀況</label>
+                    <select id="edit-healthStatus">
+                        <option value="綠色(第三優先)">綠色_正常或傷勢較輕可以自由走動_(第三優先)</option>
+                        <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
+                        <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
+                        <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-source"><i class="fas fa-source"></i> 求助記錄來源</label>
+                    <input type="text" id="edit-source" placeholder="請輸入求助記錄來源">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-notes"><i class="fas fa-sticky-note"></i> 備註</label>
+                    <textarea id="edit-notes" rows="3" placeholder="請輸入任何額外備註信息"></textarea>
+                </div>
+                
+                <div id="edit-message" class="message" style="margin-top: 15px;"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i> 取消
+                </button>
+                <button class="btn" onclick="updateRecord()">
+                    <i class="fas fa-save"></i> 保存更改
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -874,6 +1071,7 @@
         // 全局變量
         let allThirdPartyRecords = [];
         let filteredThirdPartyRecords = [];
+        let currentEditingRecordId = null;
         
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -918,13 +1116,74 @@
         
         // 聯絡方式快速選擇
         function setContactType(type) {
-            document.getElementById('contactNumber').value = type;
+            if (type === '其他') {
+                document.getElementById('other-contact-input').style.display = 'block';
+                document.getElementById('contactNumber').value = '';
+            } else {
+                document.getElementById('other-contact-input').style.display = 'none';
+                document.getElementById('contactNumber').value = type;
+            }
+            
+            // 取消只接收短信的選中狀態
+            document.getElementById('smsOnly').checked = false;
+            document.getElementById('sms-warning').style.display = 'none';
+            
             // 移除所有按鈕的active類
             document.querySelectorAll('.contact-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             // 為當前按鈕添加active類
             event.target.classList.add('active');
+        }
+        
+        // 切換只接收短信狀態 - 主表單
+        function toggleSMSOnly() {
+            const smsOnly = document.getElementById('smsOnly');
+            const contactNumber = document.getElementById('contactNumber');
+            const smsWarning = document.getElementById('sms-warning');
+            
+            if (smsOnly.checked) {
+                // 檢查聯絡方式是否為空
+                if (!contactNumber.value.trim()) {
+                    smsWarning.style.display = 'block';
+                    contactNumber.style.borderColor = 'var(--danger)';
+                    contactNumber.focus();
+                } else {
+                    smsWarning.style.display = 'none';
+                    contactNumber.style.borderColor = 'var(--primary)';
+                }
+                
+                // 取消其他聯絡方式按鈕的選中狀態
+                document.querySelectorAll('.contact-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.getElementById('other-contact-input').style.display = 'none';
+            } else {
+                smsWarning.style.display = 'none';
+                contactNumber.style.borderColor = '#e1e5eb';
+            }
+        }
+        
+        // 切換只接收短信狀態 - 編輯表單
+        function toggleEditSMSOnly() {
+            const smsOnly = document.getElementById('edit-smsOnly');
+            const contactNumber = document.getElementById('edit-contactNumber');
+            const smsWarning = document.getElementById('edit-sms-warning');
+            
+            if (smsOnly.checked) {
+                // 檢查聯絡方式是否為空
+                if (!contactNumber.value.trim()) {
+                    smsWarning.style.display = 'block';
+                    contactNumber.style.borderColor = 'var(--danger)';
+                    contactNumber.focus();
+                } else {
+                    smsWarning.style.display = 'none';
+                    contactNumber.style.borderColor = 'var(--primary)';
+                }
+            } else {
+                smsWarning.style.display = 'none';
+                contactNumber.style.borderColor = '#e1e5eb';
+            }
         }
         
         // 顯示消息
@@ -958,7 +1217,29 @@
         async function saveThirdPartyRecord() {
             const cabinNumber = document.getElementById('cabinNumber').value;
             const guestName = document.getElementById('guestName').value;
-            const contactNumber = document.getElementById('contactNumber').value;
+            
+            // 處理聯絡方式
+            let contactNumber = document.getElementById('contactNumber').value;
+            const otherContact = document.getElementById('other-contact').value;
+            const smsOnly = document.getElementById('smsOnly').checked;
+            
+            // 驗證只接收短信必須有聯絡電話
+            if (smsOnly && !contactNumber.trim()) {
+                showMessage('save-message', '選擇「只接收短信」必須提供聯絡電話', 'error');
+                document.getElementById('sms-warning').style.display = 'block';
+                document.getElementById('contactNumber').style.borderColor = 'var(--danger)';
+                document.getElementById('contactNumber').focus();
+                return;
+            }
+            
+            if (smsOnly) {
+                contactNumber = contactNumber + ' (只接收短信)';
+            } else {
+                if (contactNumber === '' && otherContact !== '') {
+                    contactNumber = otherContact;
+                }
+            }
+            
             const gender = document.getElementById('gender').value;
             const ageRange = document.getElementById('ageRange').value;
             const healthStatus = document.getElementById('healthStatus').value;
@@ -998,12 +1279,17 @@
                 document.getElementById('cabinNumber').value = '';
                 document.getElementById('guestName').value = '';
                 document.getElementById('contactNumber').value = '';
+                document.getElementById('other-contact').value = '';
+                document.getElementById('smsOnly').checked = false;
+                document.getElementById('sms-warning').style.display = 'none';
+                document.getElementById('contactNumber').style.borderColor = '#e1e5eb';
                 document.getElementById('gender').value = '';
                 document.getElementById('ageRange').value = '';
                 document.getElementById('healthStatus').value = '綠色(第三優先)';
                 document.getElementById('source').value = '';
                 document.getElementById('other-source').value = '';
                 document.getElementById('other-source-input').style.display = 'none';
+                document.getElementById('other-contact-input').style.display = 'none';
                 document.getElementById('notes').value = '';
                 
                 // 重置聯絡方式按鈕
@@ -1034,12 +1320,12 @@
                 filteredList.innerHTML = '';
                 
                 let total = 0;
-                let greenCount = 0, yellowCount = 0, redCount = 0, blackCount = 0, processedCount = 0;
+                let greenCount = 0, yellowCount = 0, redCount = 0, blackCount = 0, processedCount = 0, pendingCount = 0;
                 const sources = new Set();
                 
                 allThirdPartyRecords = []; // 重置所有記錄
                 
-                snapshot.forEach(doc => {
+                snapshot.forEach((doc, index) => {
                     const data = doc.data();
                     const id = doc.id;
                     const createdAt = data.createdAt ? data.createdAt.toDate().toLocaleString('zh-TW') : '未知';
@@ -1068,6 +1354,8 @@
                     // 處理狀態統計
                     if (data.processed) {
                         processedCount++;
+                    } else {
+                        pendingCount++;
                     }
                     
                     // 狀態標籤
@@ -1080,6 +1368,7 @@
                     
                     const row = document.createElement('tr');
                     row.innerHTML = `
+                        <td>${index + 1}</td>
                         <td>${data.cabinNumber || '-'}</td>
                         <td>${data.guestName || '-'}</td>
                         <td>${data.contactNumber || '-'}</td>
@@ -1092,6 +1381,9 @@
                         <td>
                             <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${id}')">
                                 <i class="fas fa-search"></i> 對比
+                            </button>
+                            <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="editRecord('${id}')">
+                                <i class="fas fa-edit"></i> 編輯
                             </button>
                             ${!data.processed ? `
                             <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="markAsProcessed('${id}')">
@@ -1115,10 +1407,7 @@
                 
                 // 更新統計數字
                 document.getElementById('total-third-party').textContent = total;
-                document.getElementById('green-count').textContent = greenCount;
-                document.getElementById('yellow-count').textContent = yellowCount;
-                document.getElementById('red-count').textContent = redCount;
-                document.getElementById('black-count').textContent = blackCount;
+                document.getElementById('pending-count').textContent = pendingCount;
                 document.getElementById('processed-count').textContent = processedCount;
                 
                 // 更新健康統計卡片
@@ -1179,6 +1468,113 @@
             } catch (error) {
                 console.error('標記記錄失敗:', error);
                 showMessage('records-message', '標記失敗: ' + error.message, 'error');
+            }
+        }
+        
+        // 編輯記錄
+        function editRecord(recordId) {
+            const record = allThirdPartyRecords.find(r => r.id === recordId);
+            
+            if (!record) {
+                showMessage('records-message', '找不到指定的記錄', 'error');
+                return;
+            }
+            
+            currentEditingRecordId = recordId;
+            
+            // 填充表單數據
+            document.getElementById('edit-cabinNumber').value = record.cabinNumber || '';
+            document.getElementById('edit-guestName').value = record.guestName || '';
+            
+            // 處理聯絡方式 - 檢查是否為只接收短信
+            const isSMSOnly = record.contactNumber && record.contactNumber.includes('(只接收短信)');
+            document.getElementById('edit-smsOnly').checked = isSMSOnly;
+            if (isSMSOnly) {
+                // 去掉後綴
+                const phoneNumber = record.contactNumber.replace(' (只接收短信)', '');
+                document.getElementById('edit-contactNumber').value = phoneNumber;
+                document.getElementById('edit-contactNumber').style.borderColor = 'var(--primary)';
+            } else {
+                document.getElementById('edit-contactNumber').value = record.contactNumber || '';
+                document.getElementById('edit-contactNumber').style.borderColor = '#e1e5eb';
+            }
+            
+            document.getElementById('edit-gender').value = record.gender || '';
+            document.getElementById('edit-ageRange').value = record.ageRange || '';
+            document.getElementById('edit-healthStatus').value = record.healthStatus || '';
+            document.getElementById('edit-source').value = record.source || '';
+            document.getElementById('edit-notes').value = record.notes || '';
+            
+            // 隱藏警告訊息
+            document.getElementById('edit-sms-warning').style.display = 'none';
+            
+            // 顯示模態框
+            document.getElementById('edit-record-modal').style.display = 'flex';
+        }
+        
+        // 關閉編輯模態框
+        function closeEditModal() {
+            document.getElementById('edit-record-modal').style.display = 'none';
+            document.getElementById('edit-message').textContent = '';
+            document.getElementById('edit-message').className = 'message';
+            currentEditingRecordId = null;
+        }
+        
+        // 更新記錄
+        async function updateRecord() {
+            if (!currentEditingRecordId) {
+                showMessage('edit-message', '沒有選擇要編輯的記錄', 'error');
+                return;
+            }
+            
+            const cabinNumber = document.getElementById('edit-cabinNumber').value;
+            const guestName = document.getElementById('edit-guestName').value;
+            let contactNumber = document.getElementById('edit-contactNumber').value;
+            const smsOnly = document.getElementById('edit-smsOnly').checked;
+            const gender = document.getElementById('edit-gender').value;
+            const ageRange = document.getElementById('edit-ageRange').value;
+            const healthStatus = document.getElementById('edit-healthStatus').value;
+            const source = document.getElementById('edit-source').value;
+            const notes = document.getElementById('edit-notes').value;
+            
+            // 驗證只接收短信必須有聯絡電話
+            if (smsOnly && !contactNumber.trim()) {
+                showMessage('edit-message', '選擇「只接收短信」必須提供聯絡電話', 'error');
+                document.getElementById('edit-sms-warning').style.display = 'block';
+                document.getElementById('edit-contactNumber').style.borderColor = 'var(--danger)';
+                document.getElementById('edit-contactNumber').focus();
+                return;
+            }
+            
+            // 處理聯絡方式
+            if (smsOnly) {
+                contactNumber = contactNumber + ' (只接收短信)';
+            }
+            
+            try {
+                await db.collection('rescue_records').doc(currentEditingRecordId).update({
+                    cabinNumber,
+                    guestName,
+                    contactNumber,
+                    gender,
+                    ageRange,
+                    healthStatus,
+                    source,
+                    notes,
+                    updatedAt: new Date()
+                });
+                
+                showMessage('edit-message', '記錄更新成功！', 'success');
+                
+                // 延遲關閉模態框以便用戶看到成功消息
+                setTimeout(() => {
+                    closeEditModal();
+                    loadThirdPartyRecords();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('更新記錄失敗:', error);
+                showMessage('edit-message', '更新失敗: ' + error.message, 'error');
             }
         }
         
@@ -1502,7 +1898,7 @@
             });
             
             // 顯示篩選結果
-            filteredThirdPartyRecords.forEach(record => {
+            filteredThirdPartyRecords.forEach((record, index) => {
                 const createdAt = record.createdAt ? record.createdAt.toLocaleString('zh-TW') : '未知';
                 
                 // 狀態標籤
@@ -1515,6 +1911,7 @@
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
+                    <td>${index + 1}</td>
                     <td>${record.cabinNumber || '-'}</td>
                     <td>${record.guestName || '-'}</td>
                     <td>${record.contactNumber || '-'}</td>
@@ -1524,6 +1921,22 @@
                     <td>${record.source || '-'}</td>
                     <td>${statusBadge}</td>
                     <td>${createdAt}</td>
+                    <td>
+                        <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${record.id}')">
+                            <i class="fas fa-search"></i> 對比
+                        </button>
+                        <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="editRecord('${record.id}')">
+                            <i class="fas fa-edit"></i> 編輯
+                        </button>
+                        ${!record.processed ? `
+                        <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="markAsProcessed('${record.id}')">
+                            <i class="fas fa-check"></i> 求助個案已救援
+                        </button>
+                        ` : ''}
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteThirdPartyRecord('${record.id}')">
+                            <i class="fas fa-trash"></i> 刪除
+                        </button>
+                    </td>
                 `;
                 
                 filteredList.appendChild(row);
@@ -1546,7 +1959,7 @@
             });
             
             // 顯示搜索結果
-            searchResults.forEach(record => {
+            searchResults.forEach((record, index) => {
                 const createdAt = record.createdAt ? record.createdAt.toLocaleString('zh-TW') : '未知';
                 
                 // 狀態標籤
@@ -1559,6 +1972,7 @@
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
+                    <td>${index + 1}</td>
                     <td>${record.cabinNumber || '-'}</td>
                     <td>${record.guestName || '-'}</td>
                     <td>${record.contactNumber || '-'}</td>
@@ -1571,6 +1985,9 @@
                     <td>
                         <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${record.id}')">
                             <i class="fas fa-search"></i> 對比
+                        </button>
+                        <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="editRecord('${record.id}')">
+                            <i class="fas fa-edit"></i> 編輯
                         </button>
                         ${!record.processed ? `
                         <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px;" onclick="markAsProcessed('${record.id}')">
