@@ -39,7 +39,7 @@
         .dashboard-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: 3fr 2fr; /* 上方60% 下方40% */
+            grid-template-rows: 3fr 2fr;
             gap: 10px;
             height: 100vh;
             padding: 10px;
@@ -56,7 +56,7 @@
         
         .section-header {
             background: #3d3d3d;
-            padding: 10px 15px; /* 減少頂部內邊距 */
+            padding: 10px 15px;
             border-bottom: 1px solid #444;
             display: flex;
             justify-content: space-between;
@@ -75,7 +75,7 @@
         .section-content {
             flex: 1;
             overflow: auto;
-            padding: 12px 15px; /* 減少內邊距 */
+            padding: 12px 15px;
         }
         
         /* 救援地圖樣式 */
@@ -90,69 +90,346 @@
             background: #1e3a5f;
             border: 1px solid #444;
             border-radius: 4px;
-            min-height: 300px; /* 調整最小高度 */
+            min-height: 300px;
         }
         
-        /* 移除救援狀態摘要樣式 */
+        /* 救援地圖控制欄樣式 */
+        .rescue-map-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+            background: #3d3d3d;
+            border-bottom: 1px solid #444;
+            align-items: center;
+        }
+        
+        .rescue-map-controls textarea {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #2d2d2d;
+            color: #fff;
+            resize: vertical;
+            font-size: 14px;
+        }
+        
+        .rescue-map-controls input[type="text"] {
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            background: #2d2d2d;
+            color: #fff;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        
+        .rescue-map-controls button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .rescue-map-controls button:hover {
+            background: #1a73e8;
+        }
+        
+        .rescue-map-controls button:active {
+            transform: scale(0.95);
+        }
+        
+        .rescue-map-controls button.danger {
+            background: var(--danger);
+        }
+        
+        .rescue-map-controls button.danger:hover {
+            background: #d33426;
+        }
+        
+        .rescue-map-controls .mode-info {
+            font-size: 14px;
+            color: #aaa;
+            margin-left: auto;
+        }
+        
+        /* 增強摘要區域樣式 - 縮小標籤 */
         .summary-enhanced {
-            display: none; /* 隱藏救援狀態摘要 */
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+            padding: 12px;
+            background: #3d3d3d;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
         
-        /* 即時監控數據樣式 - 縮小尺寸 */
+        .status-counter {
+            text-align: center;
+            padding: 8px;
+            min-width: 100px;
+        }
+        
+        .status-counter.waiting {
+            border-left: 3px solid #EA4335;
+        }
+        
+        .status-counter.rescuing {
+            border-left: 3px solid #FBBC05;
+        }
+        
+        .status-counter.landed {
+            border-left: 3px solid #34A853;
+        }
+        
+        .counter-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+        
+        .counter-label {
+            font-size: 0.75rem;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .cabin-numbers {
+            margin-top: 3px;
+            font-size: 0.65rem;
+            color: #ccc;
+            max-height: 40px;
+            overflow-y: auto;
+        }
+        
+        /* 狀態指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .status-red { background-color: #EA4335; }
+        .status-yellow { background-color: #FBBC05; }
+        .status-green { background-color: #34A853; }
+        
+        /* 車廂模式選擇器 */
+        .cabin-mode-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .mode-btn {
+            padding: 5px 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #3d3d3d;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* 車廂樣式 - 增大車廂和字體 */
+        .cabin {
+            cursor: pointer;
+        }
+        
+        .cabin polygon {
+            fill: #fff;
+            stroke: #333;
+            stroke-width: 2;
+        }
+        
+        .status-red polygon {
+            fill: #EA4335;
+        }
+        
+        .status-yellow polygon {
+            fill: #FBBC05;
+        }
+        
+        .status-green polygon {
+            fill: #34A853;
+        }
+        
+        .status-empty polygon {
+            fill: #666;
+            opacity: 0.5;
+        }
+        
+        .cabin text {
+            fill: #fff;
+            font-size: 16px; /* 增大車廂號碼字體 */
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+        }
+        
+        .cabin-highlight polygon {
+            stroke: gold;
+            stroke-width: 6;
+            filter: url(#highlightGlow);
+            animation: pulse 0.6s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 地圖元素樣式 */
+        .city {
+            fill: #ccc;
+            opacity: 0.6;
+            stroke: #999;
+            stroke-dasharray: 6;
+        }
+        
+        .sea {
+            fill: url(#gradBay);
+            opacity: 0.7;
+        }
+        
+        .mountain {
+            fill: url(#gradMountain);
+        }
+        
+        .rope {
+            fill: none;
+            stroke: #444;
+            stroke-width: 3;
+        }
+        
+        .label {
+            font-weight: bold;
+            fill: #fff;
+        }
+        
+        /* 實時更新指示器 */
+        .update-indicator {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background-color: #34A853;
+            margin-left: 4px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* 同步狀態指示器 */
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 10px;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #2e7d32;
+            color: white;
+        }
+        
+        .sync-status.syncing {
+            background: #f57c00;
+        }
+        
+        .sync-status.error {
+            background: #c62828;
+        }
+        
+        /* 自定義滾動條 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+        
+        /* 即時監控數據樣式 */
         .stats-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 8px; /* 減少間距 */
-            margin-bottom: 10px; /* 減少底部邊距 */
+            gap: 8px;
+            margin-bottom: 10px;
         }
         
         .stat-card {
             background: #3d3d3d;
             border-radius: 6px;
-            padding: 10px; /* 減少內邊距 */
+            padding: 10px;
             text-align: center;
         }
         
         .stat-card i {
-            font-size: 1.2rem; /* 縮小圖標 */
-            margin-bottom: 5px; /* 減少底部邊距 */
+            font-size: 1.2rem;
+            margin-bottom: 5px;
             color: var(--primary);
         }
         
         .stat-card .number {
-            font-size: 1.5rem; /* 縮小數字 */
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 3px; /* 減少底部邊距 */
+            margin-bottom: 3px;
         }
         
         .stat-card .label {
-            font-size: 0.8rem; /* 縮小標籤 */
+            font-size: 0.8rem;
             color: #aaa;
         }
         
         .health-stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 6px; /* 減少間距 */
-            margin-bottom: 10px; /* 減少底部邊距 */
+            gap: 6px;
+            margin-bottom: 10px;
         }
         
         .health-stat-card {
             background: #3d3d3d;
             border-radius: 6px;
-            padding: 8px; /* 減少內邊距 */
+            padding: 8px;
             text-align: center;
         }
         
         .health-stat-card .number {
-            font-size: 1.2rem; /* 縮小數字 */
+            font-size: 1.2rem;
             font-weight: 700;
-            margin-bottom: 3px; /* 減少底部邊距 */
+            margin-bottom: 3px;
         }
         
         .health-stat-card .label {
-            font-size: 0.7rem; /* 縮小標籤 */
+            font-size: 0.7rem;
         }
         
         .health-stat-card.green { border-left: 4px solid #34A853; }
@@ -162,22 +439,22 @@
         
         /* 救援時間棒形圖樣式 */
         #rescue-time-chart .section-content {
-            padding: 8px 15px; /* 減少內邊距 */
+            padding: 8px 15px;
         }
         
         .chart-container {
-            height: 85%; /* 稍微減少圖表容器高度 */
+            height: 85%;
             position: relative;
         }
         
         /* 救援監測系統樣式 */
         .search-box {
-            margin-bottom: 10px; /* 減少底部邊距 */
+            margin-bottom: 10px;
         }
         
         .search-box input {
             width: 100%;
-            padding: 8px; /* 減少內邊距 */
+            padding: 8px;
             border: 1px solid #444;
             border-radius: 4px;
             background: #3d3d3d;
@@ -187,14 +464,14 @@
         .monitor-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.8rem; /* 縮小字體 */
+            font-size: 0.8rem;
         }
         
         .monitor-table th {
             background: #3d3d3d;
             color: #fff;
             text-align: left;
-            padding: 8px 10px; /* 減少內邊距 */
+            padding: 8px 10px;
             font-weight: 600;
             position: sticky;
             top: 0;
@@ -202,7 +479,7 @@
         }
         
         .monitor-table td {
-            padding: 6px 10px; /* 減少內邊距 */
+            padding: 6px 10px;
             border-bottom: 1px solid #444;
         }
         
@@ -216,9 +493,9 @@
         
         .status-badge {
             display: inline-block;
-            padding: 3px 6px; /* 減少內邊距 */
+            padding: 3px 6px;
             border-radius: 10px;
-            font-size: 0.7rem; /* 縮小字體 */
+            font-size: 0.7rem;
             font-weight: 600;
         }
         
@@ -237,115 +514,6 @@
             color: white;
         }
         
-        /* 自定義滾動條 */
-        ::-webkit-scrollbar {
-            width: 6px; /* 縮小滾動條 */
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #2d2d2d;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #555;
-            border-radius: 3px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #777;
-        }
-        
-        /* 狀態指示器 */
-        .status-indicator {
-            display: inline-block;
-            width: 6px; /* 縮小指示器 */
-            height: 6px;
-            border-radius: 50%;
-            margin-right: 4px; /* 減少右邊距 */
-        }
-        
-        .status-red { background-color: #EA4335; }
-        .status-yellow { background-color: #FBBC05; }
-        .status-green { background-color: #34A853; }
-        
-        /* 實時更新指示器 */
-        .update-indicator {
-            display: inline-block;
-            width: 5px; /* 縮小指示器 */
-            height: 5px;
-            border-radius: 50%;
-            background-color: #34A853;
-            margin-left: 4px; /* 減少左邊距 */
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        
-        /* 車廂模式選擇器 */
-        .cabin-mode-selector {
-            display: flex;
-            gap: 8px; /* 減少間距 */
-            margin-bottom: 8px; /* 減少底部邊距 */
-        }
-        
-        .mode-btn {
-            padding: 5px 10px; /* 減少內邊距 */
-            border: 1px solid #444;
-            border-radius: 4px;
-            background: #3d3d3d;
-            color: #aaa;
-            cursor: pointer;
-            font-size: 0.8rem; /* 縮小字體 */
-        }
-        
-        .mode-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        /* 標題樣式調整 */
-        h4 {
-            margin: 10px 0 8px !important; /* 減少邊距 */
-            color: #fff !important;
-            font-size: 0.9rem; /* 縮小字體 */
-        }
-        
-        /* 響應式設計 */
-        @media (max-width: 1200px) {
-            .dashboard-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: 3fr 2fr 2fr 2fr; /* 調整行高比例 */
-            }
-        }
-
-        /* 手動更新按鈕樣式 */
-        .refresh-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
-        }
-        
-        .refresh-btn:hover {
-            background: #1a73e8;
-        }
-        
-        .refresh-btn:active {
-            transform: scale(0.95);
-        }
-
         /* OCC求助記錄統計樣式 */
         .occ-stats {
             display: grid;
@@ -372,25 +540,42 @@
             font-size: 0.7rem;
         }
         
-        /* 同步狀態指示器 */
-        .sync-status {
-            display: inline-flex;
+        /* 手動更新按鈕樣式 */
+        .refresh-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            display: flex;
             align-items: center;
             gap: 5px;
-            margin-left: 10px;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 10px;
-            background: #2e7d32;
-            color: white;
+            transition: all 0.3s;
         }
         
-        .sync-status.syncing {
-            background: #f57c00;
+        .refresh-btn:hover {
+            background: #1a73e8;
         }
         
-        .sync-status.error {
-            background: #c62828;
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* 標題樣式調整 */
+        h4 {
+            margin: 10px 0 8px !important;
+            color: #fff !important;
+            font-size: 0.9rem;
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 3fr 2fr 2fr 2fr;
+            }
         }
     </style>
 </head>
@@ -413,13 +598,61 @@
                     </button>
                 </div>
             </div>
-            <div class="section-content">
-                <div class="cabin-mode-selector">
-                    <button class="mode-btn active" onclick="setCabinMode(84)">84車廂模式</button>
-                    <button class="mode-btn" onclick="setCabinMode(109)">109車廂模式</button>
+            
+            <!-- 救援地圖控制欄 -->
+            <div class="rescue-map-controls">
+                <textarea id="seqInput" placeholder="輸入車廂號碼 (用逗號或空格分隔)"></textarea>
+                <button onclick="applySequences()">套用</button>
+                <input type="text" id="searchBox" placeholder="搜尋車廂…">
+                <button onclick="searchCabin()">搜尋</button>
+                <button onclick="clearAllData()" class="danger">清除所有</button>
+                <button id="moveToggleBtn">啟用移動</button>
+                <div class="mode-info">
+                    <button id="toggleBtn">切換到 109 車廂</button>
+                    <span id="modeLabel">模式: 84 車廂</span>
                 </div>
-                <!-- 移除了救援狀態摘要 -->
-                <svg id="map" viewBox="0 0 2000 700">
+            </div>
+            
+            <!-- 增強摘要區域 -->
+            <div class="summary-enhanced">
+                <div class="status-counter waiting">
+                    <div class="counter-number" id="waiting-count">0</div>
+                    <div class="counter-label">
+                        <span class="status-indicator status-red"></span>等待救援
+                    </div>
+                    <div class="cabin-numbers" id="waiting-cabins"></div>
+                </div>
+                <div class="status-counter rescuing">
+                    <div class="counter-number" id="rescuing-count">0</div>
+                    <div class="counter-label">
+                        <span class="status-indicator status-yellow"></span>救援中
+                    </div>
+                    <div class="cabin-numbers" id="rescuing-cabins"></div>
+                </div>
+                <div class="status-counter landed">
+                    <div class="counter-number" id="landed-count">0</div>
+                    <div class="counter-label">
+                        <span class="status-indicator status-green"></span>已著陸
+                    </div>
+                    <div class="cabin-numbers" id="landed-cabins"></div>
+                </div>
+            </div>
+            
+            <div class="section-content">
+                <svg id="map" viewBox="0 0 2000 600">
+                    <defs>
+                        <linearGradient id="gradMountain" x1="0" y1="1" x2="0" y2="0">
+                            <stop offset="0%" stop-color="#388E3C"/>
+                            <stop offset="100%" stop-color="#A5D6A7"/>
+                        </linearGradient>
+                        <linearGradient id="gradBay" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#81D4FA"/>
+                            <stop offset="100%" stop-color="#0288D1"/>
+                        </linearGradient>
+                        <filter id="highlightGlow">
+                            <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="gold"/>
+                        </filter>
+                    </defs>
                     <!-- 地圖SVG內容將由JavaScript動態生成 -->
                 </svg>
             </div>
@@ -586,7 +819,7 @@
     </div>
 
     <script>
-        // Firebase配置 (使用與主系統相同的配置)
+        // Firebase配置
         const firebaseConfig = {
             apiKey: "AIzaSyCgSaPKhaaX9cP1tY-ThykJvo_sJtVyyDc",
             authDomain: "qrcodesystem-bceda.firebaseapp.com",
@@ -604,12 +837,14 @@
         
         // 全局變數
         let allRecords = [];
-        let rescueRecords = []; // OCC求助記錄
+        let rescueRecords = [];
         let timeChart = null;
         let cabins = [];
-        let cabinMode = 84; // 默認84車廂模式
-        let ropePts = []; // 繩索路線點
-        let autoRefreshInterval = null; // 自動刷新間隔
+        let cabinMode = 84;
+        let ropePts = [];
+        let autoRefreshInterval = null;
+        let globalOffset = 0;
+        let moveMode = false;
         
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -627,7 +862,7 @@
             // 設置實時監聽器
             setupRealTimeListeners();
             
-            // 設置自動刷新 - 改為1分鐘 (60000毫秒) 提高同步頻率
+            // 設置自動刷新
             autoRefreshInterval = setInterval(() => {
                 console.log("自動刷新數據...");
                 syncWithMainSystem();
@@ -674,7 +909,7 @@
                             beginAtZero: true,
                             ticks: {
                                 color: '#e0e0e0',
-                                precision: 0, // 確保Y軸只顯示整數
+                                precision: 0,
                                 callback: function(value) {
                                     if (Number.isInteger(value)) {
                                         return value;
@@ -705,7 +940,7 @@
                             text: '救援時間分佈 (分鐘)',
                             color: '#e0e0e0',
                             font: {
-                                size: 14 // 縮小標題字體
+                                size: 14
                             }
                         }
                     }
@@ -715,11 +950,12 @@
         
         // 初始化救援地圖
         function initRescueMap() {
-            // 定義繩索路線點 (與主系統相同)
+            console.log("初始化救援地圖...");
+            
             const segments = ["TC","T1","T2A","AIAS","T2B","T3","T4","T5","NLS","T6","T7","NP"];
             const slots = [2,2,2,2,10,6,5,1,2,7,3];
             const startX = 100, endX = 1900, unit = (endX - startX) / 42;
-            const baseY = 600, topY = 300, npY = 340;
+            const baseY = 500, topY = 200, npY = 240; // 調整Y座標以適應較小的viewBox
             let x = startX;
             const xCoords = [x];
             
@@ -730,10 +966,7 @@
             
             const t2bX = xCoords[4], t3X = xCoords[5], nlsX = xCoords[8], npX = xCoords[11];
             
-            // 背景
             const svg = document.getElementById("map");
-            
-            // 清除現有內容
             svg.innerHTML = '';
             
             // 定義SVG元素
@@ -778,19 +1011,6 @@
             gradBay.appendChild(stop4);
             defs.appendChild(gradBay);
             
-            // 高亮效果
-            const highlightGlow = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-            highlightGlow.setAttribute("id", "highlightGlow");
-            
-            const feDropShadow = document.createElementNS("http://www.w3.org/2000/svg", "feDropShadow");
-            feDropShadow.setAttribute("dx", "0");
-            feDropShadow.setAttribute("dy", "0");
-            feDropShadow.setAttribute("stdDeviation", "6");
-            feDropShadow.setAttribute("flood-color", "gold");
-            
-            highlightGlow.appendChild(feDropShadow);
-            defs.appendChild(highlightGlow);
-            
             svg.appendChild(defs);
             
             // 背景
@@ -809,7 +1029,7 @@
             
             // 山脈
             const mountain = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            mountain.setAttribute("d", `M${t3X},${baseY} L${nlsX},${topY} L${npX},${npY} L${npX},700 L${t3X},700 Z`);
+            mountain.setAttribute("d", `M${t3X},${baseY} L${nlsX},${topY} L${npX},${npY} L${npX},600 L${t3X},600 Z`);
             mountain.setAttribute("class", "mountain");
             mountain.setAttribute("fill", "url(#gradMountain)");
             svg.appendChild(mountain);
@@ -824,7 +1044,7 @@
                 else if(i > segments.indexOf("NLS")) gy = topY + (npY - topY) * ((gx - nlsX) / (npX - nlsX));
                 groundPts.push([gx, gy]);
                 
-                // 簡單的站點標記
+                // 站點標記
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 circle.setAttribute("cx", gx);
                 circle.setAttribute("cy", gy);
@@ -859,15 +1079,25 @@
             rope.setAttribute("stroke-width", "3");
             svg.appendChild(rope);
             
-            // 圖例
+            // 可拖拽的繩索區域
+            const ropeHit = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            ropeHit.setAttribute("points", rope.getAttribute("points"));
+            ropeHit.setAttribute("stroke", "transparent");
+            ropeHit.setAttribute("stroke-width", "30");
+            ropeHit.setAttribute("fill", "none");
+            ropeHit.style.cursor = "default";
+            ropeHit.style.pointerEvents = "all";
+            svg.appendChild(ropeHit);
+            
+            // 圖例 - 調整位置到更上方
             const legend = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            legend.setAttribute("transform", "translate(1600,460)");
+            legend.setAttribute("transform", "translate(1600,360)");
             
             const legendRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
             legendRect.setAttribute("x", "0");
-            legendRect.setAttribute("y", "0");
+            legendRect.setAttribute("y", "-10");
             legendRect.setAttribute("width", "320");
-            legendRect.setAttribute("height", "160");
+            legendRect.setAttribute("height", "220");
             legendRect.setAttribute("fill", "white");
             legendRect.setAttribute("stroke", "#333");
             legend.appendChild(legendRect);
@@ -876,7 +1106,7 @@
             legendTitle.textContent = "車廂狀態";
             legendTitle.setAttribute("x", "160");
             legendTitle.setAttribute("y", "30");
-            legendTitle.setAttribute("font-size", "20");
+            legendTitle.setAttribute("font-size", "40");
             legendTitle.setAttribute("font-weight", "bold");
             legendTitle.setAttribute("text-anchor", "middle");
             legendTitle.setAttribute("fill", "#333");
@@ -897,7 +1127,7 @@
             waitingText.textContent = "等待";
             waitingText.setAttribute("x", "40");
             waitingText.setAttribute("y", "19");
-            waitingText.setAttribute("font-size", "16");
+            waitingText.setAttribute("font-size", "26");
             waitingText.setAttribute("fill", "#333");
             waitingLegend.appendChild(waitingText);
             
@@ -918,7 +1148,7 @@
             rescuingText.textContent = "救援中";
             rescuingText.setAttribute("x", "40");
             rescuingText.setAttribute("y", "19");
-            rescuingText.setAttribute("font-size", "16");
+            rescuingText.setAttribute("font-size", "26");
             rescuingText.setAttribute("fill", "#333");
             rescuingLegend.appendChild(rescuingText);
             
@@ -939,7 +1169,7 @@
             landedText.textContent = "已著陸";
             landedText.setAttribute("x", "40");
             landedText.setAttribute("y", "19");
-            landedText.setAttribute("font-size", "16");
+            landedText.setAttribute("font-size", "26");
             landedText.setAttribute("fill", "#333");
             landedLegend.appendChild(landedText);
             
@@ -947,7 +1177,384 @@
             
             svg.appendChild(legend);
             
+            // 構建車廂
+            buildCabins();
+            
+            // 設置移動模式事件
+            document.getElementById("moveToggleBtn").addEventListener("click", function() {
+                moveMode = !moveMode;
+                this.textContent = moveMode ? "禁用移動" : "啟用移動";
+                ropeHit.style.cursor = moveMode ? "grab" : "default";
+                ropeHit.style.pointerEvents = moveMode ? "all" : "none";
+                
+                if(moveMode) {
+                    let dragging = false, lastX;
+                    
+                    ropeHit.addEventListener("mousedown", e => {
+                        dragging = true;
+                        lastX = e.clientX;
+                        ropeHit.style.cursor = "grabbing";
+                    });
+                    
+                    window.addEventListener("mousemove", e => {
+                        if(dragging) {
+                            globalOffset += (e.clientX - lastX) * 2;
+                            lastX = e.clientX;
+                            layoutCabins();
+                        }
+                    });
+                    
+                    window.addEventListener("mouseup", () => {
+                        dragging = false;
+                        ropeHit.style.cursor = "grab";
+                    });
+                }
+            });
+            
+            // 設置車廂模式切換
+            document.getElementById("toggleBtn").addEventListener("click", function() {
+                cabinMode = cabinMode === 84 ? 109 : 84;
+                this.textContent = "切換到 " + (cabinMode === 84 ? "109" : "84") + " 車廂";
+                document.getElementById("modeLabel").textContent = "模式: " + cabinMode + " 車廂";
+                buildCabins();
+            });
+            
             console.log("救援地圖初始化完成");
+        }
+        
+        // 構建車廂 - 增大車廂尺寸
+        function buildCabins() {
+            const svg = document.getElementById("map");
+            
+            // 清除現有車廂
+            cabins.forEach(c => {
+                if (c.elGroup && c.elGroup.parentNode) {
+                    c.elGroup.parentNode.removeChild(c.elGroup);
+                }
+            });
+            cabins = [];
+            
+            const total = cabinMode;
+            // 增大車廂尺寸
+            const size = cabinMode === 109 ? 18 : 24; // 增大車廂尺寸
+            const ropeLen = lengthOf(ropePts);
+            
+            for(let i = 0; i < total; i++) {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.setAttribute("class", "cabin");
+                
+                // 創建六邊形
+                const pts = [];
+                for(let j = 0; j < 6; j++) {
+                    const a = Math.PI / 3 * j;
+                    pts.push((size * Math.cos(a)) + "," + (size * Math.sin(a)));
+                }
+                
+                const hex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                hex.setAttribute("points", pts.join(" "));
+                g.appendChild(hex);
+                
+                // 創建標籤 - 增大字體
+                const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                lbl.setAttribute("class", "seq-label");
+                lbl.setAttribute("y", "5");
+                lbl.setAttribute("font-size", "16"); // 增大車廂號碼字體
+                lbl.textContent = "";
+                g.appendChild(lbl);
+                
+                const cabin = {
+                    id: "cabin-" + i,
+                    fields: {},
+                    elGroup: g,
+                    elShape: hex,
+                    elLabel: lbl
+                };
+                
+                cabins.push(cabin);
+                svg.appendChild(g);
+            }
+            
+            layoutCabins();
+            updateEnhancedSummary();
+            
+            // 從Realtime Database恢復車廂號碼
+            restoreCabinSequences();
+            
+            // 更新車廂狀態
+            updateRescueMapFromFirestore();
+        }
+        
+        // 布局車廂
+        function layoutCabins() {
+            const ropeLen = lengthOf(ropePts);
+            cabins.forEach((c, i) => {
+                const d = (i * ropeLen / cabins.length + globalOffset) % ropeLen;
+                const pos = pointAt(ropePts, d);
+                c.elGroup.setAttribute("transform", `translate(${pos.x},${pos.y})`);
+            });
+        }
+        
+        // 計算路線長度
+        function lengthOf(pts) {
+            let L = 0;
+            for(let i = 0; i < pts.length - 1; i++) {
+                L += Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]);
+            }
+            return L;
+        }
+        
+        // 計算路線上的點
+        function pointAt(pts, d) {
+            let sum = 0;
+            for(let i = 0; i < pts.length - 1; i++) {
+                const [x1, y1] = pts[i], [x2, y2] = pts[i+1];
+                const seg = Math.hypot(x2 - x1, y2 - y1);
+                if(sum + seg >= d) {
+                    const t = (d - sum) / seg;
+                    return {x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t};
+                }
+                sum += seg;
+            }
+            return {x: pts.at(-1)[0], y: pts.at(-1)[1]};
+        }
+        
+        // 增強摘要更新
+        function updateEnhancedSummary() {
+            let waiting = 0, rescuing = 0, landed = 0;
+            const waitingCabins = [], rescuingCabins = [], landedCabins = [];
+            
+            cabins.forEach(c => {
+                const sequence = c.fields.sequence || '';
+                
+                if (c.elGroup.classList.contains("status-red")) {
+                    waiting++;
+                    if(sequence) waitingCabins.push(sequence);
+                }
+                else if (c.elGroup.classList.contains("status-yellow")) {
+                    rescuing++;
+                    if(sequence) rescuingCabins.push(sequence);
+                }
+                else if (c.elGroup.classList.contains("status-green")) {
+                    landed++;
+                    if(sequence) landedCabins.push(sequence);
+                }
+            });
+            
+            // 更新计数器
+            document.getElementById("waiting-count").textContent = waiting;
+            document.getElementById("rescuing-count").textContent = rescuing;
+            document.getElementById("landed-count").textContent = landed;
+            
+            // 更新车厢号码列表
+            document.getElementById("waiting-cabins").textContent = waitingCabins.join(', ');
+            document.getElementById("rescuing-cabins").textContent = rescuingCabins.join(', ');
+            document.getElementById("landed-cabins").textContent = landedCabins.join(', ');
+        }
+        
+        // 從Realtime Database恢復車廂號碼
+        async function restoreCabinSequences() {
+            try {
+                const snapshot = await realtimeDb.ref("cabins").once("value");
+                const data = snapshot.val();
+                
+                if (!data) return;
+                
+                for(const cabinId in data) {
+                    const cabin = cabins.find(c => c.id === cabinId);
+                    if(cabin) {
+                        cabin.fields = data[cabinId];
+                        cabin.elLabel.textContent = cabin.fields.sequence || "";
+                    }
+                }
+                
+                updateEnhancedSummary();
+                console.log("車廂號碼已從Realtime Database恢復");
+            } catch (error) {
+                console.error("恢復車廂號碼失敗:", error);
+            }
+        }
+        
+        // 套用車廂號碼序列
+        function applySequences() {
+            const seqs = document.getElementById("seqInput").value.split(/[\s,]+/).filter(s => s);
+            if(seqs.length === 0) return;
+            
+            for(let i = 0; i < cabins.length; i++) {
+                const seq = i < seqs.length ? seqs[i] : "";
+                cabins[i].fields.sequence = seq;
+                cabins[i].elLabel.textContent = seq;
+                
+                // 保存到Realtime Database
+                realtimeDb.ref("cabins/" + cabins[i].id).set(cabins[i].fields);
+            }
+            
+            updateEnhancedSummary();
+            updateRescueMapFromFirestore();
+        }
+        
+        // 搜尋車廂
+        function searchCabin() {
+            const q = document.getElementById("searchBox").value.trim();
+            if(!q) return;
+            
+            const cabin = cabins.find(c => c.fields.sequence === q);
+            if(cabin) {
+                cabin.elGroup.classList.add("cabin-highlight");
+                setTimeout(() => cabin.elGroup.classList.remove("cabin-highlight"), 2000);
+                
+                // 滾動到該車廂
+                const bbox = cabin.elGroup.getBBox();
+                const svg = document.getElementById("map");
+                svg.setAttribute("viewBox", `${bbox.x - 100} ${bbox.y - 100} 200 200`);
+                setTimeout(() => svg.setAttribute("viewBox", "0 0 2000 600"), 2000);
+            }
+        }
+        
+        // 清除所有資料
+        function clearAllData() {
+            if(!confirm("確定要清除所有車廂資料嗎？")) return;
+            
+            cabins.forEach(c => {
+                c.fields = {};
+                c.elLabel.textContent = "";
+                realtimeDb.ref("cabins/" + c.id).remove();
+            });
+            
+            updateEnhancedSummary();
+            updateRescueMapFromFirestore();
+        }
+        
+        // 從Firestore更新救援地圖狀態
+        async function updateRescueMapFromFirestore() {
+            try {
+                const snapshot = await db.collection('guests').get();
+                const guestRecords = [];
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.docId = doc.id;
+                    guestRecords.push(data);
+                });
+                
+                console.log(`從Firestore載入了 ${guestRecords.length} 筆記錄`);
+                
+                // 為每個車廂更新狀態
+                cabins.forEach(cabin => {
+                    const cabinNumber = cabin.fields.sequence;
+                    
+                    if (cabinNumber) {
+                        // 查找匹配的客人記錄
+                        const matchedGuests = guestRecords.filter(guest => 
+                            guest.cabinNumber === cabinNumber
+                        );
+                        
+                        console.log(`車廂 ${cabinNumber} 找到 ${matchedGuests.length} 個組別`);
+                        
+                        if (matchedGuests.length > 0) {
+                            // 根據救援數據確定車廂狀態
+                            updateCabinStatusByRescueData(cabin, matchedGuests);
+                        } else {
+                            // 如果沒有找到匹配的賓客記錄，設置為空車廂
+                            cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+                            console.log(`車廂 ${cabinNumber} 設置為空車廂`);
+                        }
+                    } else {
+                        // 如果沒有車廂號碼，設置為空車廂
+                        cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+                    }
+                });
+                
+                updateEnhancedSummary();
+                
+            } catch (error) {
+                console.error('從Firestore更新救援地圖失敗:', error);
+            }
+        }
+        
+        // 根據救援數據更新車廂狀態
+        function updateCabinStatusByRescueData(cabin, guests) {
+            // 移除所有狀態類
+            cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+            
+            if (!guests || guests.length === 0) {
+                // 沒有組別記錄，設置為空車廂
+                cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+                return;
+            }
+            
+            // 統計各組狀態
+            let landedGroups = 0;
+            let rescuingGroups = 0;
+            let waitingGroups = 0;
+            let totalGroups = guests.length;
+            
+            guests.forEach(guest => {
+                // 判斷單個組別的狀態
+                const groupStatus = getGroupRescueStatus(guest);
+                
+                switch(groupStatus) {
+                    case 'landed':
+                        landedGroups++;
+                        break;
+                    case 'rescuing':
+                        rescuingGroups++;
+                        break;
+                    case 'waiting':
+                        waitingGroups++;
+                        break;
+                }
+            });
+            
+            console.log(`車廂 ${cabin.fields.sequence} 狀態統計: 已著陸=${landedGroups}, 救援中=${rescuingGroups}, 等待=${waitingGroups}, 總數=${totalGroups}`);
+            
+            // 根據規則設置車廂狀態
+            if (landedGroups === totalGroups && totalGroups > 0) {
+                // 所有組別都已著陸，則車廂為綠色
+                cabin.elGroup.classList.add("status-green");
+                console.log(`車廂 ${cabin.fields.sequence} 設置為綠色(已著陸)`);
+            } else if (waitingGroups === 0 && rescuingGroups > 0) {
+                // 沒有等待救援組別，但至少有一個組別在救援中，則車廂為黃色
+                cabin.elGroup.classList.add("status-yellow");
+                console.log(`車廂 ${cabin.fields.sequence} 設置為黃色(救援中)`);
+            } else if (waitingGroups > 0) {
+                // 至少有一個組別等待救援，則車廂為紅色
+                cabin.elGroup.classList.add("status-red");
+                console.log(`車廂 ${cabin.fields.sequence} 設置為紅色(等待救援)`);
+            } else {
+                // 默認情況，設置為等待救援
+                cabin.elGroup.classList.add("status-red");
+                console.log(`車廂 ${cabin.fields.sequence} 設置為紅色(默認等待)`);
+            }
+        }
+        
+        // 組別救援狀態判斷函數
+        function getGroupRescueStatus(guest) {
+            // 檢查是否存在救援相關字段
+            const hasRescueData = guest.timeReachedTop || guest.rescuedBy || guest.timeLanded;
+            const hasExitData = guest.exitTime && guest.exitMethod;
+            
+            // 如果有著陸時間，則判定為已著陸
+            if (guest.timeLanded) {
+                return 'landed';
+            }
+            
+            // 如果有離場時間且離場方式不為空，判定為已著陸
+            if (hasExitData) {
+                return 'landed';
+            }
+            
+            // 如果有到達頂部時間或救援人員，判定為救援中
+            if (guest.timeReachedTop || guest.rescuedBy) {
+                return 'rescuing';
+            }
+            
+            // 如果需要救護車，判定為救援中
+            if (guest.ambulance === '需要') {
+                return 'rescuing';
+            }
+            
+            // 默認情況為等待救援
+            return 'waiting';
         }
         
         // 載入所有數據
@@ -956,7 +1563,7 @@
                 await Promise.all([
                     loadGuestRecords(),
                     loadCabinData(),
-                    loadRescueRecords() // 新增：載入OCC求助記錄
+                    loadRescueRecords()
                 ]);
                 
                 updateAllDisplays();
@@ -1007,7 +1614,6 @@
                 }
             });
             
-            // 顯示狀態消息
             const now = new Date();
             const timeString = now.toLocaleTimeString('zh-TW');
             const statusMessage = `${timeString} - ${message}`;
@@ -1102,6 +1708,51 @@
             updateMonitorTable();
         }
         
+        // 更新救援地圖
+        function updateRescueMap() {
+            // 現在使用新的updateRescueMapFromFirestore函數
+            updateRescueMapFromFirestore();
+        }
+        
+        // 設置實時監聽器
+        function setupRealTimeListeners() {
+            console.log("設置實時監聽器...");
+            
+            // 監聽賓客記錄變化
+            db.collection('guests').onSnapshot(snapshot => {
+                console.log('賓客記錄更新，重新載入數據');
+                loadGuestRecords().then(() => {
+                    updateRealTimeData();
+                    updateTimeChart();
+                    updateMonitorTable();
+                    updateRescueMapFromFirestore();
+                });
+            }, error => {
+                console.error('賓客記錄監聽錯誤:', error);
+            });
+            
+            // 監聽車廂數據變化
+            realtimeDb.ref("cabins").on("value", snapshot => {
+                console.log('車廂數據更新，重新載入車廂數據');
+                loadCabinData().then(() => {
+                    updateRescueMapFromFirestore();
+                    updateRealTimeData();
+                });
+            }, error => {
+                console.error('車廂數據監聽錯誤:', error);
+            });
+            
+            // 監聽求助記錄變化
+            db.collection('rescue_records').onSnapshot(snapshot => {
+                console.log('求助記錄更新，重新載入數據');
+                loadRescueRecords().then(() => {
+                    updateRealTimeData();
+                });
+            }, error => {
+                console.error('求助記錄監聽錯誤:', error);
+            });
+        }
+        
         // 更新即時數據
         function updateRealTimeData() {
             // 基本統計
@@ -1146,193 +1797,42 @@
             document.getElementById('total-groups').textContent = total;
         }
         
-        // 更新救援地圖
-        function updateRescueMap() {
-            console.log("開始更新救援地圖...");
-            
-            // 清除現有車廂
-            const svg = document.getElementById('map');
-            const existingCabins = svg.querySelectorAll('.cabin');
-            existingCabins.forEach(cabin => {
-                if (cabin.parentNode) {
-                    cabin.parentNode.removeChild(cabin);
-                }
-            });
-            
-            console.log(`清除 ${existingCabins.length} 個現有車廂標記`);
-            
-            // 根據車廂模式創建車廂
-            for (let i = 0; i < cabinMode; i++) {
-                const cabinId = `cabin-${i}`;
-                const cabinData = cabins.find(c => c.id === cabinId);
-                const sequence = cabinData ? cabinData.fields.sequence : null;
-                
-                console.log(`處理車廂 ${cabinId}:`, { sequence, cabinData });
-                
-                // 查找該車廂的所有組別
-                const cabinGroups = allRecords.filter(record => 
-                    record.cabinNumber === sequence
-                );
-                
-                console.log(`車廂 ${sequence} 有 ${cabinGroups.length} 個組別`);
-                
-                // 確定車廂狀態 - 使用與主系統相同的邏輯
-                let status = 'empty';
-                if (cabinGroups.length > 0) {
-                    const landedGroups = cabinGroups.filter(g => getGroupRescueStatus(g) === 'landed').length;
-                    const rescuingGroups = cabinGroups.filter(g => getGroupRescueStatus(g) === 'rescuing').length;
-                    const waitingGroups = cabinGroups.filter(g => getGroupRescueStatus(g) === 'waiting').length;
-                    const totalGroups = cabinGroups.length;
-                    
-                    console.log(`車廂 ${sequence} 狀態統計:`, { 
-                        landed: landedGroups, 
-                        rescuing: rescuingGroups, 
-                        waiting: waitingGroups,
-                        total: totalGroups
-                    });
-                    
-                    if (landedGroups === totalGroups && totalGroups > 0) {
-                        status = 'landed';
-                    } else if (waitingGroups === 0 && rescuingGroups > 0) {
-                        status = 'rescuing';
-                    } else if (waitingGroups > 0) {
-                        status = 'waiting';
-                    } else {
-                        status = 'waiting'; // 默認等待狀態
-                    }
-                }
-                
-                console.log(`車廂 ${sequence} 最終狀態: ${status}`);
-                
-                // 創建車廂標記
-                createCabinMarker(svg, i, sequence, status, cabinMode);
-            }
-            
-            console.log("救援地圖更新完成");
-        }
-        
-        // 計算路線長度
-        function lengthOf(pts) {
-            let L = 0;
-            for(let i = 0; i < pts.length - 1; i++) {
-                L += Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]);
-            }
-            return L;
-        }
-        
-        // 計算路線上的點
-        function pointAt(pts, d) {
-            let sum = 0;
-            for(let i = 0; i < pts.length - 1; i++) {
-                const [x1, y1] = pts[i], [x2, y2] = pts[i+1];
-                const seg = Math.hypot(x2 - x1, y2 - y1);
-                if(sum + seg >= d) {
-                    const t = (d - sum) / seg;
-                    return {x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t};
-                }
-                sum += seg;
-            }
-            return {x: pts.at(-1)[0], y: pts.at(-1)[1]};
-        }
-        
-        // 創建車廂標記
-        function createCabinMarker(svg, index, sequence, status, mode) {
-            const cabinGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            cabinGroup.setAttribute("class", `cabin ${status !== 'empty' ? `status-${status}` : ''}`);
-            cabinGroup.setAttribute("data-cabin-id", `cabin-${index}`);
-            cabinGroup.setAttribute("data-sequence", sequence || '');
-            
-            // 計算車廂位置
-            const ropeLen = lengthOf(ropePts);
-            const d = (index * ropeLen / mode) % ropeLen;
-            const pos = pointAt(ropePts, d);
-            
-            // 車廂形狀 - 六邊形
-            const hexagon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-            const size = mode === 109 ? 14 : 18;
-            const points = [];
-            
-            for (let j = 0; j < 6; j++) {
-                const angle = Math.PI / 3 * j;
-                const x = size * Math.cos(angle);
-                const y = size * Math.sin(angle);
-                points.push(`${x},${y}`);
-            }
-            
-            hexagon.setAttribute("points", points.join(" "));
-            hexagon.setAttribute("transform", `translate(${pos.x}, ${pos.y})`);
-            
-            // 根據狀態設置顏色
-            if (status === 'waiting') {
-                hexagon.setAttribute("fill", "#EA4335");
-            } else if (status === 'rescuing') {
-                hexagon.setAttribute("fill", "#FBBC05");
-            } else if (status === 'landed') {
-                hexagon.setAttribute("fill", "#34A853");
-            } else {
-                hexagon.setAttribute("fill", "#666");
-                hexagon.setAttribute("opacity", "0.5");
-            }
-            
-            hexagon.setAttribute("stroke", "#333");
-            hexagon.setAttribute("stroke-width", "2");
-            
-            cabinGroup.appendChild(hexagon);
-            
-            // 添加車廂號碼標籤
-            if (sequence) {
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", pos.x);
-                text.setAttribute("y", pos.y + 5);
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("dominant-baseline", "middle");
-                text.setAttribute("fill", "#fff");
-                text.setAttribute("font-size", "12");
-                text.setAttribute("font-weight", "bold");
-                text.textContent = sequence;
-                
-                cabinGroup.appendChild(text);
-            } else {
-                // 顯示車廂索引（調試用）
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", pos.x);
-                text.setAttribute("y", pos.y + 5);
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("dominant-baseline", "middle");
-                text.setAttribute("fill", "#888");
-                text.setAttribute("font-size", "10");
-                text.textContent = index + 1;
-                
-                cabinGroup.appendChild(text);
-            }
-            
-            svg.appendChild(cabinGroup);
-        }
-        
-        // 更新時間圖表
+        // 更新時間圖表 - 修復跨日時間計算問題
         function updateTimeChart() {
             // 計算救援時間分佈
             const timeRanges = [0, 0, 0, 0, 0]; // 0-15, 15-30, 30-45, 45-60, 60+
             
-            allRecords.forEach(record => {
-                if (record.timeReachedTop && record.timeLanded) {
-                    // 計算救援時間 (分鐘)
-                    const startTime = timeStringToMinutes(record.timeReachedTop);
-                    const endTime = timeStringToMinutes(record.timeLanded);
+            // 問題2修復：使用正確的救援完成記錄
+            const completedRecords = allRecords.filter(record => 
+                record.timeReachedTop && record.timeLanded
+            );
+            
+            console.log(`找到 ${completedRecords.length} 筆已完成救援的記錄`);
+            
+            completedRecords.forEach(record => {
+                // 計算救援時間 (分鐘) - 修復跨日問題
+                const startTime = timeStringToMinutes(record.timeReachedTop);
+                const endTime = timeStringToMinutes(record.timeLanded);
+                
+                if (startTime && endTime) {
+                    let duration = endTime - startTime;
                     
-                    if (startTime && endTime) {
-                        const duration = endTime - startTime;
-                        
-                        if (duration >= 0) {
-                            if (duration <= 15) timeRanges[0]++;
-                            else if (duration <= 30) timeRanges[1]++;
-                            else if (duration <= 45) timeRanges[2]++;
-                            else if (duration <= 60) timeRanges[3]++;
-                            else timeRanges[4]++;
-                        }
+                    // 處理跨日情況：如果結束時間小於開始時間，說明跨越了午夜
+                    if (duration < 0) {
+                        duration += 24 * 60; // 加上一天的分钟数
+                    }
+                    
+                    if (duration >= 0) {
+                        if (duration <= 15) timeRanges[0]++;
+                        else if (duration <= 30) timeRanges[1]++;
+                        else if (duration <= 45) timeRanges[2]++;
+                        else if (duration <= 60) timeRanges[3]++;
+                        else timeRanges[4]++;
                     }
                 }
             });
+            
+            console.log("救援時間分佈:", timeRanges);
             
             // 更新圖表
             if (timeChart) {
@@ -1425,98 +1925,6 @@
                 row.appendChild(statusCell);
                 
                 tableBody.appendChild(row);
-            });
-        }
-        
-        // 組別救援狀態判斷函數 (與主系統相同)
-        function getGroupRescueStatus(guest) {
-            // 檢查是否存在救援相關字段
-            const hasRescueData = guest.timeReachedTop || guest.rescuedBy || guest.timeLanded;
-            const hasExitData = guest.exitTime && guest.exitMethod;
-            
-            // 如果有著陸時間，則判定為已著陸
-            if (guest.timeLanded) {
-                return 'landed';
-            }
-            
-            // 如果有離場時間且離場方式不為空，判定為已著陸
-            if (hasExitData) {
-                return 'landed';
-            }
-            
-            // 如果有到達頂部時間或救援人員，判定為救援中
-            if (guest.timeReachedTop || guest.rescuedBy) {
-                return 'rescuing';
-            }
-            
-            // 如果需要救護車，判定為救援中
-            if (guest.ambulance === '需要') {
-                return 'rescuing';
-            }
-            
-            // 默認情況為等待救援
-            return 'waiting';
-        }
-        
-        // 設置實時監聽器
-        function setupRealTimeListeners() {
-            console.log("設置實時監聽器...");
-            
-            // 監聽賓客記錄變化
-            db.collection('guests').onSnapshot(snapshot => {
-                console.log('賓客記錄更新，重新載入數據');
-                loadGuestRecords().then(() => {
-                    updateRealTimeData();
-                    updateTimeChart();
-                    updateMonitorTable();
-                    updateRescueMap(); // 確保救援地圖也更新
-                });
-            }, error => {
-                console.error('賓客記錄監聽錯誤:', error);
-            });
-            
-            // 監聽車廂數據變化 - 增強版本
-            realtimeDb.ref("cabins").on("value", snapshot => {
-                console.log('車廂數據更新，重新載入車廂數據');
-                loadCabinData().then(() => {
-                    updateRescueMap();
-                    updateRealTimeData(); // 同時更新統計數據
-                });
-            }, error => {
-                console.error('車廂數據監聽錯誤:', error);
-            });
-            
-            // 監聽求助記錄變化
-            db.collection('rescue_records').onSnapshot(snapshot => {
-                console.log('求助記錄更新，重新載入數據');
-                loadRescueRecords().then(() => {
-                    updateRealTimeData();
-                });
-            }, error => {
-                console.error('求助記錄監聽錯誤:', error);
-            });
-            
-            // 新增：監聽特定車廂號碼變化
-            setupCabinSequenceListener();
-        }
-        
-        // 新增：專門監聽車廂號碼變化
-        function setupCabinSequenceListener() {
-            realtimeDb.ref("cabins").on("child_changed", (snapshot) => {
-                const cabinData = snapshot.val();
-                const cabinId = snapshot.key;
-                
-                console.log(`車廂 ${cabinId} 數據變更:`, cabinData);
-                
-                if (cabinData.sequence) {
-                    console.log(`檢測到車廂號碼變化: ${cabinId} -> ${cabinData.sequence}`);
-                    
-                    // 立即更新救援地圖
-                    updateRescueMap();
-                    
-                    // 更新統計數據
-                    updateRealTimeData();
-                }
             });
         }
         
