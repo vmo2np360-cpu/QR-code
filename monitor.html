@@ -1363,6 +1363,7 @@
                     const cabin = cabins.find(c => c.id === cabinId);
                     if(cabin) {
                         cabin.fields = data[cabinId];
+                        // 確保車廂號碼顯示
                         cabin.elLabel.textContent = cabin.fields.sequence || "";
                     }
                 }
@@ -1374,7 +1375,7 @@
             }
         }
         
-        // 套用車廂號碼序列
+        // 套用車廂號碼序列 - 修復空車廂號碼顯示問題
         function applySequences() {
             const seqs = document.getElementById("seqInput").value.split(/[\s,]+/).filter(s => s);
             if(seqs.length === 0) return;
@@ -1382,6 +1383,7 @@
             for(let i = 0; i < cabins.length; i++) {
                 const seq = i < seqs.length ? seqs[i] : "";
                 cabins[i].fields.sequence = seq;
+                // 確保車廂號碼顯示
                 cabins[i].elLabel.textContent = seq;
                 
                 // 保存到Realtime Database
@@ -1390,6 +1392,26 @@
             
             updateEnhancedSummary();
             updateRescueMapFromFirestore();
+            
+            // 確保空車廂號碼也能顯示
+            ensureAllCabinNumbersVisible();
+        }
+        
+        // 確保所有車廂號碼可見
+        function ensureAllCabinNumbersVisible() {
+            cabins.forEach(cabin => {
+                // 確保車廂號碼顯示
+                if (cabin.fields.sequence) {
+                    cabin.elLabel.textContent = cabin.fields.sequence;
+                }
+                
+                // 如果車廂沒有狀態，設置為空車廂狀態
+                if (!cabin.elGroup.classList.contains("status-red") && 
+                    !cabin.elGroup.classList.contains("status-yellow") && 
+                    !cabin.elGroup.classList.contains("status-green")) {
+                    cabin.elGroup.classList.add("status-empty");
+                }
+            });
         }
         
         // 搜尋車廂
@@ -1424,7 +1446,7 @@
             updateRescueMapFromFirestore();
         }
         
-        // 從Firestore更新救援地圖狀態
+        // 從Firestore更新救援地圖狀態 - 修復空車廂號碼顯示問題
         async function updateRescueMapFromFirestore() {
             try {
                 const snapshot = await db.collection('guests').get();
@@ -1442,6 +1464,11 @@
                 cabins.forEach(cabin => {
                     const cabinNumber = cabin.fields.sequence;
                     
+                    // 確保車廂號碼顯示
+                    if (cabinNumber) {
+                        cabin.elLabel.textContent = cabinNumber;
+                    }
+                    
                     if (cabinNumber) {
                         // 查找匹配的客人記錄
                         const matchedGuests = guestRecords.filter(guest => 
@@ -1456,11 +1483,13 @@
                         } else {
                             // 如果沒有找到匹配的賓客記錄，設置為空車廂
                             cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+                            cabin.elGroup.classList.add("status-empty");
                             console.log(`車廂 ${cabinNumber} 設置為空車廂`);
                         }
                     } else {
                         // 如果沒有車廂號碼，設置為空車廂
                         cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+                        cabin.elGroup.classList.add("status-empty");
                     }
                 });
                 
@@ -1473,12 +1502,12 @@
         
         // 根據救援數據更新車廂狀態
         function updateCabinStatusByRescueData(cabin, guests) {
-            // 移除所有狀態類
-            cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+            // 移除所有狀態類，包括空車廂狀態
+            cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green", "status-empty");
             
             if (!guests || guests.length === 0) {
                 // 沒有組別記錄，設置為空車廂
-                cabin.elGroup.classList.remove("status-red", "status-yellow", "status-green");
+                cabin.elGroup.classList.add("status-empty");
                 return;
             }
             
@@ -1521,9 +1550,9 @@
                 cabin.elGroup.classList.add("status-red");
                 console.log(`車廂 ${cabin.fields.sequence} 設置為紅色(等待救援)`);
             } else {
-                // 默認情況，設置為等待救援
-                cabin.elGroup.classList.add("status-red");
-                console.log(`車廂 ${cabin.fields.sequence} 設置為紅色(默認等待)`);
+                // 默認情況，設置為空車廂
+                cabin.elGroup.classList.add("status-empty");
+                console.log(`車廂 ${cabin.fields.sequence} 設置為空車廂(默認)`);
             }
         }
         
