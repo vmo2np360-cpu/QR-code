@@ -24,6 +24,7 @@
             --dark: #343a40;
             --gray: #6c757d;
             --light-blue: #e3f2fd;
+            --animation-duration: 0.3s; /* 默認動畫時長 */
         }
         
         * {
@@ -1061,6 +1062,173 @@
         
         /* 移动端适配 */
         @media (max-width: 768px) {
+            /* 移动设备優化 - 隱藏系統介紹卡片 */
+            .system-info {
+                display: none;
+            }
+            
+            /* 優化標題大小 */
+            h2 {
+                font-size: 1.4rem;
+                padding: 12px 0;
+                margin-bottom: 20px;
+            }
+            
+            h2 i {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            
+            /* 優化表單元素 */
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            label {
+                font-size: 1rem;
+                margin-bottom: 8px;
+            }
+            
+            input, select {
+                padding: 12px;
+                font-size: 16px; /* 防止iOS縮放 */
+                border-radius: 8px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 16px;
+                border-radius: 8px;
+            }
+            
+            /* 優化卡片內邊距 */
+            .card {
+                padding: 20px;
+                border-radius: 12px;
+            }
+            
+            .section {
+                padding: 20px;
+                border-radius: 12px;
+                margin: 20px 0;
+            }
+            
+            /* 優化導航按鈕 */
+            .nav-btn {
+                padding: 12px 16px;
+                font-size: 14px;
+                border-radius: 25px;
+            }
+            
+            /* 優化表格顯示 */
+            .record-table {
+                font-size: 14px;
+            }
+            
+            .record-table th, 
+            .record-table td {
+                padding: 10px 8px;
+                min-width: 100px;
+            }
+            
+            /* 優化統計卡片 */
+            .stats-container {
+                gap: 15px;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-card .number {
+                font-size: 2rem;
+            }
+            
+            /* 優化健康狀況統計 */
+            .health-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .health-stat-card {
+                padding: 15px;
+            }
+            
+            .health-stat-card .number {
+                font-size: 1.5rem;
+            }
+            
+            /* 優化篩選容器 */
+            .filter-container {
+                gap: 12px;
+            }
+            
+            .filter-item {
+                min-width: 100%;
+            }
+            
+            /* 優化搜尋框 */
+            .search-box input {
+                min-width: 100%;
+            }
+            
+            /* 優化QR碼容器 */
+            .qrcode-container {
+                padding: 15px;
+                margin: 15px auto;
+            }
+            
+            /* 優化掃描器 */
+            .scanner-container {
+                margin: 15px -10px;
+            }
+            
+            .scanner-overlay {
+                width: 85%;
+                max-width: 300px;
+            }
+            
+            /* 優化救援地圖控制項 */
+            #controls {
+                padding: 10px;
+                gap: 8px;
+            }
+            
+            #controls textarea,
+            #controls input[type="text"] {
+                min-width: 100%;
+                font-size: 16px;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            /* 優化模態框 */
+            .modal-content {
+                padding: 15px;
+                max-width: 95%;
+                margin: 10px;
+            }
+            
+            /* 優化摘要區域 */
+            .summary-enhanced {
+                flex-direction: column;
+                gap: 15px;
+                padding: 12px;
+            }
+            
+            .status-counter {
+                min-width: 100%;
+                padding: 12px;
+            }
+            
+            .counter-number {
+                font-size: 1.8rem;
+            }
+            
+            /* 其他原有移动端样式 */
             .header-content {
                 flex-direction: column;
                 gap: 20px;
@@ -1077,24 +1245,6 @@
                 justify-content: center;
             }
             
-            input, select {
-                padding: 12px;
-                font-size: 14px;
-            }
-            
-            .btn {
-                padding: 12px;
-                font-size: 14px;
-            }
-            
-            #qrcode {
-                width: 80vw !important;
-                height: 80vw !important;
-                max-width: 300px;
-                max-height: 300px;
-                margin: 10px auto;
-            }
-            
             .record-table {
                 display: block;
                 overflow-x: auto;
@@ -1105,10 +1255,6 @@
             .record-table td {
                 min-width: 120px;
                 padding: 8px;
-            }
-            
-            .system-info {
-                grid-template-columns: 1fr;
             }
             
             .stats-container {
@@ -1137,28 +1283,136 @@
                 width: 100%;
             }
             
-            #map {
-                height: 500px;
-            }
-            
-            #controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .modal-content {
-                max-width: 95%;
-                padding: 15px;
-            }
-            
-            .summary-enhanced {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
             .rescue-map-toolbar {
                 flex-direction: column;
                 align-items: stretch;
+            }
+        }
+        
+        /* 小屏幕手機優化 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 10px;
+            }
+            
+            .header-content {
+                padding: 0 10px;
+            }
+            
+            .logo {
+                font-size: 1.2rem;
+            }
+            
+            .logo-icon {
+                font-size: 1.5rem;
+            }
+            
+            nav {
+                gap: 8px;
+            }
+            
+            .nav-btn {
+                padding: 10px 12px;
+                font-size: 12px;
+            }
+            
+            .nav-btn i {
+                font-size: 1rem;
+            }
+            
+            .health-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            /* 進一步縮小表格字體 */
+            .record-table {
+                font-size: 12px;
+            }
+            
+            .record-table th, 
+            .record-table td {
+                padding: 8px 6px;
+                min-width: 80px;
+            }
+            
+            /* 優化狀態徽章 */
+            .status-badge {
+                padding: 4px 8px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* 横屏模式優化 */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            .system-info {
+                display: none;
+            }
+            
+            .section {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            /* 在横屏時保持表格可滾動 */
+            .record-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+
+        /* 觸摸設備優化 */
+        @media (hover: none) and (pointer: coarse) {
+            .btn, .nav-btn {
+                min-height: 44px; /* 最小觸摸目標尺寸 */
+            }
+            
+            input, select {
+                min-height: 44px;
+            }
+            
+            /* 移除hover效果，使用active狀態 */
+            .nav-btn:hover {
+                transform: none;
+                box-shadow: none;
+            }
+            
+            .nav-btn:active {
+                background: white;
+                color: var(--primary);
+                transform: scale(0.98);
+            }
+            
+            .btn:hover {
+                transform: none;
+                box-shadow: none;
+            }
+            
+            .btn:active {
+                transform: scale(0.98);
+            }
+            
+            /* 優化卡片點擊反饋 */
+            .info-card:active {
+                transform: scale(0.98);
+            }
+        }
+
+        /* 高DPI設備優化 */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .btn, .nav-btn {
+                border-width: 0.5px;
             }
         }
         
@@ -1288,6 +1542,15 @@
         .input-error {
             border-color: #EA4335 !important;
             box-shadow: 0 0 0 3px rgba(234, 67, 53, 0.2) !important;
+        }
+
+        /* 移動設備特定優化 */
+        body.mobile-device {
+            /* 移動設備上的優化 */
+        }
+
+        .mobile-device .mobile-optimized {
+            font-size: 16px; /* 防止iOS縮放 */
         }
     </style>
 </head>
@@ -2064,6 +2327,120 @@
         // 救援地圖登入狀態
         let rescueMapLoggedIn = false;
         
+        // 添加時間格式化函數
+        function formatFirestoreTimestamp(timestamp) {
+            if (!timestamp) return '-';
+            
+            try {
+                let date;
+                
+                // 處理不同類型的時間戳
+                if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+                    // Firestore Timestamp 類型
+                    date = timestamp.toDate();
+                } else if (timestamp instanceof Date) {
+                    // Date 對象
+                    date = timestamp;
+                } else if (typeof timestamp === 'string') {
+                    // 字符串格式
+                    date = new Date(timestamp);
+                } else if (typeof timestamp === 'number') {
+                    // 時間戳
+                    date = new Date(timestamp);
+                } else if (timestamp.seconds) {
+                    // 包含 seconds 屬性的對象
+                    date = new Date(timestamp.seconds * 1000);
+                } else {
+                    console.warn('無法識別的時間格式:', timestamp);
+                    return '格式錯誤';
+                }
+                
+                // 檢查日期是否有效
+                if (isNaN(date.getTime())) {
+                    console.warn('無效的日期:', timestamp);
+                    return '無效日期';
+                }
+                
+                // 返回格式化後的時間
+                return date.toLocaleString('zh-TW', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                }).replace(/\//g, '/');
+                
+            } catch (error) {
+                console.error('時間格式化錯誤:', error, timestamp);
+                return '格式錯誤';
+            }
+        }
+
+        // 簡化版本，僅返回時間部分
+        function formatFirestoreTime(timestamp) {
+            if (!timestamp) return '-';
+            
+            try {
+                let date;
+                
+                if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+                    date = timestamp.toDate();
+                } else if (timestamp instanceof Date) {
+                    date = timestamp;
+                } else if (typeof timestamp === 'string') {
+                    date = new Date(timestamp);
+                } else if (typeof timestamp === 'number') {
+                    date = new Date(timestamp);
+                } else if (timestamp.seconds) {
+                    date = new Date(timestamp.seconds * 1000);
+                } else {
+                    return '-';
+                }
+                
+                if (isNaN(date.getTime())) {
+                    return '-';
+                }
+                
+                return date.toLocaleTimeString('zh-TW', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+                
+            } catch (error) {
+                console.error('時間格式化錯誤:', error);
+                return '-';
+            }
+        }
+
+        // 檢測移動設備
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                   window.innerWidth <= 768;
+        }
+
+        // 根據設備類型優化界面
+        function optimizeForMobile() {
+            if (isMobileDevice()) {
+                console.log('移動設備檢測，進行界面優化');
+                
+                // 添加移動設備特定類名
+                document.body.classList.add('mobile-device');
+                
+                // 優化輸入框
+                const inputs = document.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.classList.add('mobile-optimized');
+                });
+                
+                // 在移動設備上禁用某些動畫以提升性能
+                if (window.innerWidth <= 480) {
+                    document.documentElement.style.setProperty('--animation-duration', '0.2s');
+                }
+            }
+        }
+        
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 初始化QR Code生成器
@@ -2125,6 +2502,12 @@
             
             // 添加時間清除按鈕
             setTimeout(addTimeClearButtons, 1000);
+            
+            // 移動設備優化
+            optimizeForMobile();
+            
+            // 監聽窗口大小變化
+            window.addEventListener('resize', optimizeForMobile);
         });
         
         // 救援地圖登入功能
@@ -3166,25 +3549,10 @@
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const id = doc.id;
-                    const createdAt = data.createdAt ? data.createdAt.toDate().toLocaleString() : '未知';
                     
-                    // 問題1修復：安全處理 exitTime 字段
-                    let exitTime = '-';
-                    if (data.exitTime) {
-                        if (typeof data.exitTime.toDate === 'function') {
-                            exitTime = data.exitTime.toDate().toLocaleString();
-                        } else if (data.exitTime instanceof Date) {
-                            exitTime = data.exitTime.toLocaleString();
-                        } else {
-                            // 如果是字符串或其他格式，尝试转换
-                            try {
-                                exitTime = new Date(data.exitTime).toLocaleString();
-                            } catch (e) {
-                                console.warn('無法解析離場時間:', data.exitTime);
-                                exitTime = '格式錯誤';
-                            }
-                        }
-                    }
+                    // 使用新的時間格式化函數
+                    const createdAt = formatFirestoreTimestamp(data.createdAt);
+                    const exitTime = data.exitTime ? formatFirestoreTimestamp(data.exitTime) : '-';
                     
                     // 添加记录到所有记录数组
                     allRecords.push({
@@ -3639,10 +4007,24 @@
                 }
             }
             
-            // 處理離場時間
+            // 使用新的時間處理函數處理離場時間
             if (guestData.exitTime) {
-                const exitTime = guestData.exitTime.toDate ? guestData.exitTime.toDate() : new Date(guestData.exitTime);
-                document.getElementById('groupDetailExitTime').value = exitTime.toISOString().slice(0, 16);
+                let exitTime;
+                try {
+                    if (guestData.exitTime.toDate && typeof guestData.exitTime.toDate === 'function') {
+                        exitTime = guestData.exitTime.toDate();
+                    } else if (guestData.exitTime instanceof Date) {
+                        exitTime = guestData.exitTime;
+                    } else {
+                        exitTime = new Date(guestData.exitTime);
+                    }
+                    
+                    if (!isNaN(exitTime.getTime())) {
+                        document.getElementById('groupDetailExitTime').value = exitTime.toISOString().slice(0, 16);
+                    }
+                } catch (error) {
+                    console.error('處理離場時間錯誤:', error);
+                }
             }
             
             // 處理救援人員字段
