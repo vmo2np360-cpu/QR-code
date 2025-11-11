@@ -2467,32 +2467,26 @@
                 btn.onclick = () => showSection(btn.getAttribute('data-target'));
             });
             
-            // 檢查管理員登入狀態
-            auth.onAuthStateChanged(user => {
-                if (user && user.uid === 'sw2PxHoJ7cgY7LRgIetLRyv2IZb2') {
-                    // 監控面板登入處理
-                    if (document.getElementById('dashboard-section').classList.contains('active')) {
-                        document.getElementById('login-form').style.display = 'none';
-                        document.getElementById('dashboard-content').style.display = 'block';
-                        loadRecords();
-                        startDashboardAutoRefresh();
+            // 設置 Firebase 持久化為 LOCAL
+            auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => {
+                    console.log("Firebase 持久化設置為 LOCAL");
+                })
+                .catch((error) => {
+                    console.error("持久化設置失敗:", error);
+                });
+            
+            // 改進：檢查管理員登入狀態 - 添加延遲確保 Firebase 完成初始化
+            setTimeout(() => {
+                auth.onAuthStateChanged(user => {
+                    console.log("Auth state changed:", user);
+                    if (user && user.uid === 'sw2PxHoJ7cgY7LRgIetLRyv2IZb2') {
+                        handleUserLogin(user);
+                    } else {
+                        handleUserLogout();
                     }
-                    
-                    // 救援地圖登入處理
-                    if (document.getElementById('rescue-map-section').classList.contains('active') && rescueMapLoggedIn) {
-                        document.getElementById('rescue-map-login-form').style.display = 'none';
-                        document.getElementById('rescue-map-content').style.display = 'block';
-                        document.getElementById('rescue-map-user-info').textContent = `登入用戶: ${user.email}`;
-                        
-                        // 初始化救援地圖
-                        if (typeof initRescueMap === 'function') {
-                            initRescueMap();
-                        }
-                    }
-                } else if (user) {
-                    auth.signOut(); // 非管理员用户自动登出
-                }
-            });
+                });
+            }, 1000);
             
             // 初始化救援地圖
             initRescueMap();
@@ -2510,6 +2504,69 @@
             window.addEventListener('resize', optimizeForMobile);
         });
         
+        // 新增：處理用戶登入的函數
+        function handleUserLogin(user) {
+            console.log("用戶已登入:", user.email);
+            
+            // 監控面板處理
+            if (document.getElementById('dashboard-section').classList.contains('active')) {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                loadRecords();
+                startDashboardAutoRefresh();
+            }
+            
+            // 救援地圖處理
+            if (document.getElementById('rescue-map-section').classList.contains('active')) {
+                document.getElementById('rescue-map-login-form').style.display = 'none';
+                document.getElementById('rescue-map-content').style.display = 'block';
+                document.getElementById('rescue-map-user-info').textContent = `登入用戶: ${user.email}`;
+                
+                // 設置救援地圖登入狀態
+                rescueMapLoggedIn = true;
+                
+                // 初始化救援地圖
+                if (typeof initRescueMap === 'function') {
+                    initRescueMap();
+                }
+            }
+            
+            // 更新所有需要登入狀態的界面
+            updateLoginUI(true);
+        }
+
+        // 新增：處理用戶登出的函數
+        function handleUserLogout() {
+            console.log("用戶已登出");
+            
+            // 監控面板處理
+            if (document.getElementById('dashboard-section').classList.contains('active')) {
+                document.getElementById('login-form').style.display = 'block';
+                document.getElementById('dashboard-content').style.display = 'none';
+                stopDashboardAutoRefresh();
+            }
+            
+            // 救援地圖處理
+            if (document.getElementById('rescue-map-section').classList.contains('active')) {
+                document.getElementById('rescue-map-login-form').style.display = 'block';
+                document.getElementById('rescue-map-content').style.display = 'none';
+                rescueMapLoggedIn = false;
+            }
+            
+            // 更新所有需要登入狀態的界面
+            updateLoginUI(false);
+        }
+
+        // 新增：更新登入UI狀態
+        function updateLoginUI(isLoggedIn) {
+            // 這裡可以添加其他需要根據登入狀態更新的UI元素
+            if (isLoggedIn) {
+                console.log("更新UI: 用戶已登入");
+            } else {
+                console.log("更新UI: 用戶已登出");
+            }
+        }
+        
         // 救援地圖登入功能
         async function rescueMapLogin() {
             const email = document.getElementById('rescue-map-email').value;
@@ -2522,6 +2579,10 @@
 
             try {
                 showLoader();
+                
+                // 設置持久化為 LOCAL
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 
                 // 检查用户UID是否匹配管理员UID
@@ -2530,21 +2591,9 @@
                     throw new Error('無管理員權限');
                 }
                 
-                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 showMessage('rescue-map-login-message', '登入成功！', 'success');
                 
-                // 設置救援地圖登入狀態
-                rescueMapLoggedIn = true;
-                
-                // 顯示救援地圖內容
-                document.getElementById('rescue-map-login-form').style.display = 'none';
-                document.getElementById('rescue-map-content').style.display = 'block';
-                document.getElementById('rescue-map-user-info').textContent = `登入用戶: ${userCredential.user.email}`;
-                
-                // 初始化救援地圖
-                if (typeof initRescueMap === 'function') {
-                    initRescueMap();
-                }
+                // 登入成功後的處理由 onAuthStateChanged 處理
                 
             } catch (error) {
                 let errorMsg = '登入失敗: ';
@@ -2558,6 +2607,9 @@
                     case 'auth/invalid-email':
                         errorMsg += '無效的電子郵件';
                         break;
+                    case 'auth/too-many-requests':
+                        errorMsg += '嘗試登入次數過多，請稍後再試';
+                        break;
                     default:
                         errorMsg += error.message;
                 }
@@ -2569,12 +2621,14 @@
         
         // 救援地圖登出功能
         function rescueMapLogout() {
-            rescueMapLoggedIn = false;
-            auth.signOut();
-            document.getElementById('rescue-map-login-form').style.display = 'block';
-            document.getElementById('rescue-map-content').style.display = 'none';
-            document.getElementById('rescue-map-email').value = '';
-            document.getElementById('rescue-map-password').value = '';
+            // Firebase 登出
+            auth.signOut().then(() => {
+                console.log("救援地圖用戶已登出");
+                rescueMapLoggedIn = false;
+                showMessage('rescue-map-login-message', '已成功登出救援地圖', 'success');
+            }).catch((error) => {
+                console.error("救援地圖登出失敗:", error);
+            });
         }
         
         // 設置Firestore實時監聽器
@@ -3453,7 +3507,7 @@
             }
         }
         
-        // 管理員登入
+        // 改進管理員登入函數
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -3465,6 +3519,10 @@
 
             try {
                 showLoader();
+                
+                // 設置持久化為 LOCAL（瀏覽器關閉後仍然保持登入）
+                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
                 
                 // 检查用户UID是否匹配管理员UID
@@ -3473,13 +3531,10 @@
                     throw new Error('無管理員權限');
                 }
                 
-                await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                 showMessage('login-message', '登入成功！', 'success');
-                document.getElementById('login-form').style.display = 'none';
-                document.getElementById('dashboard-content').style.display = 'block';
-                loadRecords();
-                // 启动监控页面的自动刷新
-                startDashboardAutoRefresh();
+                
+                // 登入成功後的處理由 onAuthStateChanged 處理
+                
             } catch (error) {
                 let errorMsg = '登入失敗: ';
                 switch(error.code) {
@@ -3491,6 +3546,9 @@
                         break;
                     case 'auth/invalid-email':
                         errorMsg += '無效的電子郵件';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMsg += '嘗試登入次數過多，請稍後再試';
                         break;
                     default:
                         errorMsg += error.message;
@@ -3517,11 +3575,23 @@
             }
         }
         
-        // 登出系統
+        // 改進登出系統函數
         function logout() {
             // 停止自动刷新
             stopDashboardAutoRefresh();
-            auth.signOut();
+            
+            // 清除本地存储（如果需要）
+            if (typeof(Storage) !== "undefined") {
+                localStorage.removeItem('userLoginState');
+            }
+            
+            // Firebase 登出
+            auth.signOut().then(() => {
+                console.log("用戶已登出");
+                showMessage('login-message', '已成功登出系統', 'success');
+            }).catch((error) => {
+                console.error("登出失敗:", error);
+            });
         }
         
         // 載入記錄 - 修復版本 (問題1修復)
@@ -5219,7 +5289,7 @@
             }
         }
         
-        // 切換頁面
+        // 改進切換頁面函數
         function showSection(sectionId) {
             // 停止所有掃描器
             stopScanner();
@@ -5228,8 +5298,11 @@
             if (sectionId !== 'dashboard-section') {
                 stopDashboardAutoRefresh();
             } else {
-                // 如果切換到監控面板，啟動自動刷新
-                startDashboardAutoRefresh();
+                // 如果切換到監控面板，檢查登入狀態並決定是否啟動自動刷新
+                const user = auth.currentUser;
+                if (user && user.uid === 'sw2PxHoJ7cgY7LRgIetLRyv2IZb2') {
+                    startDashboardAutoRefresh();
+                }
             }
             
             // 隱藏所有部分
@@ -5246,26 +5319,34 @@
             });
             document.querySelector(`.nav-btn[data-target="${sectionId}"]`).classList.add('active');
             
-            // 如果是監控面板，檢查登入狀態
-            if (sectionId === 'dashboard-section') {
-                auth.onAuthStateChanged(user => {
-                    if (!user || user.uid !== 'sw2PxHoJ7cgY7LRgIetLRyv2IZb2') {
-                        document.getElementById('login-form').style.display = 'block';
-                        document.getElementById('dashboard-content').style.display = 'none';
-                    }
-                });
-            }
-            
-            // 如果是救援地圖，檢查登入狀態
-            if (sectionId === 'rescue-map-section') {
-                // 如果未登入救援地圖，顯示登入表單
-                if (!rescueMapLoggedIn) {
-                    document.getElementById('rescue-map-login-form').style.display = 'block';
-                    document.getElementById('rescue-map-content').style.display = 'none';
-                } else {
-                    // 如果已登入，顯示救援地圖內容
+            // 檢查當前用戶狀態並更新界面
+            const user = auth.currentUser;
+            if (user && user.uid === 'sw2PxHoJ7cgY7LRgIetLRyv2IZb2') {
+                // 用戶已登入
+                if (sectionId === 'dashboard-section') {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('dashboard-content').style.display = 'block';
+                    loadRecords();
+                } else if (sectionId === 'rescue-map-section') {
                     document.getElementById('rescue-map-login-form').style.display = 'none';
                     document.getElementById('rescue-map-content').style.display = 'block';
+                    document.getElementById('rescue-map-user-info').textContent = `登入用戶: ${user.email}`;
+                    rescueMapLoggedIn = true;
+                    
+                    // 初始化救援地圖
+                    if (typeof initRescueMap === 'function') {
+                        initRescueMap();
+                    }
+                }
+            } else {
+                // 用戶未登入
+                if (sectionId === 'dashboard-section') {
+                    document.getElementById('login-form').style.display = 'block';
+                    document.getElementById('dashboard-content').style.display = 'none';
+                } else if (sectionId === 'rescue-map-section') {
+                    document.getElementById('rescue-map-login-form').style.display = 'block';
+                    document.getElementById('rescue-map-content').style.display = 'none';
+                    rescueMapLoggedIn = false;
                 }
             }
         }
