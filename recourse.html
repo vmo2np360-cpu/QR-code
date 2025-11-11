@@ -1325,17 +1325,44 @@
                 
                 allThirdPartyRecords = []; // 重置所有記錄
                 
-                snapshot.forEach((doc, index) => {
+                // 修復：使用明確的計數器而不是依賴index
+                let recordIndex = 0;
+                
+                snapshot.forEach((doc) => {
                     const data = doc.data();
                     const id = doc.id;
-                    const createdAt = data.createdAt ? data.createdAt.toDate().toLocaleString('zh-TW') : '未知';
+                    
+                    // 修復：正確處理日期字段
+                    let createdAt;
+                    let createdAtObj;
+                    
+                    if (data.createdAt && data.createdAt.toDate) {
+                        createdAtObj = data.createdAt.toDate();
+                        createdAt = createdAtObj.toLocaleString('zh-TW');
+                    } else if (data.createdAt && data.createdAt instanceof Date) {
+                        createdAtObj = data.createdAt;
+                        createdAt = createdAtObj.toLocaleString('zh-TW');
+                    } else if (data.createdAt) {
+                        // 如果 createdAt 是其他格式，嘗試轉換
+                        try {
+                            createdAtObj = new Date(data.createdAt);
+                            createdAt = createdAtObj.toLocaleString('zh-TW');
+                        } catch (e) {
+                            createdAtObj = new Date();
+                            createdAt = '未知';
+                        }
+                    } else {
+                        // 如果沒有創建時間，使用當前時間
+                        createdAtObj = new Date();
+                        createdAt = createdAtObj.toLocaleString('zh-TW');
+                    }
                     
                     // 添加記錄到所有記錄數組
                     allThirdPartyRecords.push({
                         id,
                         ...data,
-                        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-                        processedAt: data.processedAt ? data.processedAt.toDate() : null
+                        createdAt: createdAtObj,
+                        processedAt: data.processedAt ? (data.processedAt.toDate ? data.processedAt.toDate() : data.processedAt) : null
                     });
                     
                     // 添加到來源集合
@@ -1366,9 +1393,12 @@
                         statusBadge = '<span class="status-badge status-pending">待處理</span>';
                     }
                     
+                    // 修復：使用明確的計數器
+                    recordIndex++;
+                    
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${index + 1}</td>
+                        <td>${recordIndex}</td>
                         <td>${data.cabinNumber || '-'}</td>
                         <td>${data.guestName || '-'}</td>
                         <td>${data.contactNumber || '-'}</td>
@@ -1898,8 +1928,20 @@
             });
             
             // 顯示篩選結果
-            filteredThirdPartyRecords.forEach((record, index) => {
-                const createdAt = record.createdAt ? record.createdAt.toLocaleString('zh-TW') : '未知';
+            // 修復：使用明確的計數器
+            let filterIndex = 0;
+            filteredThirdPartyRecords.forEach((record) => {
+                // 修復：正確處理日期顯示
+                let createdAt;
+                if (record.createdAt && record.createdAt.toLocaleString) {
+                    try {
+                        createdAt = record.createdAt.toLocaleString('zh-TW');
+                    } catch (e) {
+                        createdAt = '未知';
+                    }
+                } else {
+                    createdAt = '未知';
+                }
                 
                 // 狀態標籤
                 let statusBadge = '';
@@ -1909,9 +1951,12 @@
                     statusBadge = '<span class="status-badge status-pending">待處理</span>';
                 }
                 
+                // 修復：使用明確的計數器
+                filterIndex++;
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${filterIndex}</td>
                     <td>${record.cabinNumber || '-'}</td>
                     <td>${record.guestName || '-'}</td>
                     <td>${record.contactNumber || '-'}</td>
@@ -1959,8 +2004,20 @@
             });
             
             // 顯示搜索結果
-            searchResults.forEach((record, index) => {
-                const createdAt = record.createdAt ? record.createdAt.toLocaleString('zh-TW') : '未知';
+            // 修復：使用明確的計數器
+            let searchIndex = 0;
+            searchResults.forEach((record) => {
+                // 修復：正確處理日期顯示
+                let createdAt;
+                if (record.createdAt && record.createdAt.toLocaleString) {
+                    try {
+                        createdAt = record.createdAt.toLocaleString('zh-TW');
+                    } catch (e) {
+                        createdAt = '未知';
+                    }
+                } else {
+                    createdAt = '未知';
+                }
                 
                 // 狀態標籤
                 let statusBadge = '';
@@ -1970,9 +2027,12 @@
                     statusBadge = '<span class="status-badge status-pending">待處理</span>';
                 }
                 
+                // 修復：使用明確的計數器
+                searchIndex++;
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${searchIndex}</td>
                     <td>${record.cabinNumber || '-'}</td>
                     <td>${record.guestName || '-'}</td>
                     <td>${record.contactNumber || '-'}</td>
