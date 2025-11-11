@@ -676,6 +676,45 @@
                 </div>
             </div>
             <div class="section-content">
+                <!-- 1. OCC求助記錄統計 -->
+                <h4>OCC求助記錄統計</h4>
+                <div class="occ-stats">
+                    <div class="occ-stat-card">
+                        <div class="number" id="occ-total">0</div>
+                        <div class="label">求助記錄總數</div>
+                    </div>
+                    <div class="occ-stat-card">
+                        <div class="number" id="occ-pending">0</div>
+                        <div class="label">待處理</div>
+                    </div>
+                    <div class="occ-stat-card">
+                        <div class="number" id="occ-processed">0</div>
+                        <div class="label">已完成</div>
+                    </div>
+                </div>
+
+                <!-- 2. OCC求助記錄健康狀況統計 -->
+                <h4>OCC求助記錄健康狀況統計</h4>
+                <div class="health-stats">
+                    <div class="health-stat-card green">
+                        <div class="number" id="occ-green-count">0</div>
+                        <div class="label">綠色(第三優先)</div>
+                    </div>
+                    <div class="health-stat-card yellow">
+                        <div class="number" id="occ-yellow-count">0</div>
+                        <div class="label">黃色(第二優先)</div>
+                    </div>
+                    <div class="health-stat-card red">
+                        <div class="number" id="occ-red-count">0</div>
+                        <div class="label">紅色(第一優先)</div>
+                    </div>
+                    <div class="health-stat-card black">
+                        <div class="number" id="occ-black-count">0</div>
+                        <div class="label">黑色(沒有生命體徵)</div>
+                    </div>
+                </div>
+
+                <!-- 3. 救援記錄統計 -->
                 <h4>救援記錄統計</h4>
                 <div class="health-stats">
                     <div class="health-stat-card" style="border-left: 4px solid #4285F4;">
@@ -696,22 +735,7 @@
                     </div>
                 </div>
 
-                <h4>OCC求助記錄統計</h4>
-                <div class="occ-stats">
-                    <div class="occ-stat-card">
-                        <div class="number" id="occ-total">0</div>
-                        <div class="label">求助記錄總數</div>
-                    </div>
-                    <div class="occ-stat-card">
-                        <div class="number" id="occ-pending">0</div>
-                        <div class="label">待處理</div>
-                    </div>
-                    <div class="occ-stat-card">
-                        <div class="number" id="occ-processed">0</div>
-                        <div class="label">已完成</div>
-                    </div>
-                </div>
-                
+                <!-- 4. 健康狀況統計 -->
                 <h4>健康狀況統計</h4>
                 <div class="health-stats">
                     <div class="health-stat-card green">
@@ -732,6 +756,7 @@
                     </div>
                 </div>
                 
+                <!-- 5. 救援狀態分佈 -->
                 <h4>救援狀態分佈</h4>
                 <div class="health-stats">
                     <div class="health-stat-card" style="border-left: 4px solid #EA4335;">
@@ -1784,7 +1809,27 @@
         
         // 更新即時數據
         function updateRealTimeData() {
-            // 基本統計
+            // 1. OCC求助記錄統計
+            const occTotal = rescueRecords.length;
+            const occPending = rescueRecords.filter(r => !r.processed).length;
+            const occProcessed = rescueRecords.filter(r => r.processed).length;
+            
+            document.getElementById('occ-total').textContent = occTotal;
+            document.getElementById('occ-pending').textContent = occPending;
+            document.getElementById('occ-processed').textContent = occProcessed;
+            
+            // 2. OCC求助記錄健康狀況統計
+            const occGreenCount = rescueRecords.filter(r => r.healthStatus && r.healthStatus.includes('綠色')).length;
+            const occYellowCount = rescueRecords.filter(r => r.healthStatus && r.healthStatus.includes('黃色')).length;
+            const occRedCount = rescueRecords.filter(r => r.healthStatus && r.healthStatus.includes('紅色')).length;
+            const occBlackCount = rescueRecords.filter(r => r.healthStatus && r.healthStatus.includes('黑色')).length;
+            
+            document.getElementById('occ-green-count').textContent = occGreenCount;
+            document.getElementById('occ-yellow-count').textContent = occYellowCount;
+            document.getElementById('occ-red-count').textContent = occRedCount;
+            document.getElementById('occ-black-count').textContent = occBlackCount;
+            
+            // 3. 救援記錄統計
             const total = allRecords.length;
             const completed = allRecords.filter(r => r.status === 'completed').length;
             const pending = allRecords.filter(r => r.status !== 'completed').length;
@@ -1795,16 +1840,7 @@
             document.getElementById('pendingRecords').textContent = pending;
             document.getElementById('ambulanceNeeded').textContent = ambulanceNeeded;
             
-            // OCC求助記錄統計
-            const occTotal = rescueRecords.length;
-            const occPending = rescueRecords.filter(r => !r.processed).length;
-            const occProcessed = rescueRecords.filter(r => r.processed).length;
-            
-            document.getElementById('occ-total').textContent = occTotal;
-            document.getElementById('occ-pending').textContent = occPending;
-            document.getElementById('occ-processed').textContent = occProcessed;
-            
-            // 健康狀況統計
+            // 4. 健康狀況統計
             const greenCount = allRecords.filter(r => r.healthStatus && r.healthStatus.includes('綠色')).length;
             const yellowCount = allRecords.filter(r => r.healthStatus && r.healthStatus.includes('黃色')).length;
             const redCount = allRecords.filter(r => r.healthStatus && r.healthStatus.includes('紅色')).length;
@@ -1815,7 +1851,7 @@
             document.getElementById('red-count').textContent = redCount;
             document.getElementById('black-count').textContent = blackCount;
             
-            // 救援狀態統計
+            // 5. 救援狀態統計
             const waitingGroups = allRecords.filter(r => getGroupRescueStatus(r) === 'waiting').length;
             const rescuingGroups = allRecords.filter(r => getGroupRescueStatus(r) === 'rescuing').length;
             const landedGroups = allRecords.filter(r => getGroupRescueStatus(r) === 'landed').length;
