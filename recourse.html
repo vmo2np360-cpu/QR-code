@@ -871,7 +871,7 @@
                 
                 <!-- 對比結果區域 -->
                 <div id="comparison-results" class="comparison-results">
-                    <h3><i class="fas fa-chart-bar"></i> 對比結果 (僅顯示匹配度70%以上)</h3>
+                    <h3><i class="fas fa-chart-bar"></i> 對比結果 (僅顯示匹配度50%以上)</h3>
                     <div id="results-list"></div>
                 </div>
             </div>
@@ -1650,6 +1650,12 @@
                 return;
             }
             
+            // 檢查是否有車廂號碼
+            if (!record.cabinNumber || record.cabinNumber.trim() === '') {
+                showMessage('records-message', '無法進行匹配：求助記錄中沒有車廂號碼', 'error');
+                return;
+            }
+            
             try {
                 showMessage('records-message', '正在查詢系統數據...', 'info');
                 
@@ -1661,33 +1667,39 @@
                     const data = doc.data();
                     let match = false;
                     
-                    // 檢查每個字段的匹配情況（大小寫不敏感）
+                    // 首先檢查車廂號碼是否一致（大小寫不敏感）
                     const recordCabin = data.cabinNumber ? data.cabinNumber.toLowerCase().trim() : '';
                     const inputCabin = record.cabinNumber ? record.cabinNumber.toLowerCase().trim() : '';
                     
-                    const recordName = data.guestName ? data.guestName.toLowerCase().trim() : '';
-                    const inputName = record.guestName ? record.guestName.toLowerCase().trim() : '';
-                    
-                    const recordContact = data.contactNumber ? data.contactNumber.toLowerCase().trim() : '';
-                    const inputContact = record.contactNumber ? record.contactNumber.toLowerCase().trim() : '';
-                    
-                    const recordGender = data.gender || '';
-                    const inputGender = record.gender || '';
-                    
-                    const recordAgeRange = data.ageRange || '';
-                    const inputAgeRange = record.ageRange || '';
-                    
-                    const recordHealth = data.healthStatus || '';
-                    const inputHealth = record.healthStatus || '';
-                    
-                    // 如果有任何一個字段匹配，就認為是潛在匹配
-                    if ((record.cabinNumber && recordCabin === inputCabin) ||
-                        (record.guestName && recordName === inputName) ||
-                        (record.contactNumber && recordContact === inputContact) ||
-                        (record.gender && recordGender === inputGender) ||
-                        (record.ageRange && recordAgeRange === inputAgeRange) ||
-                        (record.healthStatus && recordHealth === inputHealth)) {
-                        match = true;
+                    // 只有車廂號碼一致才進行後續匹配
+                    if (recordCabin === inputCabin) {
+                        // 檢查其他字段的匹配情況（大小寫不敏感）
+                        const recordName = data.guestName ? data.guestName.toLowerCase().trim() : '';
+                        const inputName = record.guestName ? record.guestName.toLowerCase().trim() : '';
+                        
+                        const recordContact = data.contactNumber ? data.contactNumber.toLowerCase().trim() : '';
+                        const inputContact = record.contactNumber ? record.contactNumber.toLowerCase().trim() : '';
+                        
+                        const recordGender = data.gender || '';
+                        const inputGender = record.gender || '';
+                        
+                        const recordAgeRange = data.ageRange || '';
+                        const inputAgeRange = record.ageRange || '';
+                        
+                        const recordHealth = data.healthStatus || '';
+                        const inputHealth = record.healthStatus || '';
+                        
+                        // 如果有任何一個其他字段匹配，就認為是潛在匹配
+                        if ((record.guestName && recordName === inputName) ||
+                            (record.contactNumber && recordContact === inputContact) ||
+                            (record.gender && recordGender === inputGender) ||
+                            (record.ageRange && recordAgeRange === inputAgeRange) ||
+                            (record.healthStatus && recordHealth === inputHealth)) {
+                            match = true;
+                        } else {
+                            // 即使其他字段都不匹配，只要車廂號碼一致，也進行匹配度計算
+                            match = true;
+                        }
                     }
                     
                     if (match) {
@@ -1706,9 +1718,9 @@
                     }
                 });
                 
-                // 按匹配度從高到低排序，並過濾掉匹配度低於70%的記錄
+                // 按匹配度從高到低排序，並過濾掉匹配度低於50%的記錄
                 results.sort((a, b) => b.matchScore - a.matchScore);
-                results = results.filter(result => result.matchScore >= 70);
+                results = results.filter(result => result.matchScore >= 50);
                 
                 displayComparisonResults(results, {
                     cabinNumber: record.cabinNumber,
@@ -1731,7 +1743,7 @@
             const comparisonResults = document.getElementById('comparison-results');
             
             if (results.length === 0) {
-                resultsList.innerHTML = '<div class="message message-info">未找到匹配度70%以上的記錄</div>';
+                resultsList.innerHTML = '<div class="message message-info">未找到匹配度50%以上的記錄</div>';
                 comparisonResults.style.display = 'block';
                 return;
             }
@@ -1752,7 +1764,7 @@
                 if (matchScore >= 80) {
                     matchLevel = 'high';
                     matchText = '高匹配度';
-                } else if (matchScore >= 70) {
+                } else if (matchScore >= 50) {
                     matchLevel = 'medium';
                     matchText = '中等匹配度';
                 }
@@ -1832,7 +1844,7 @@
             });
             
             comparisonResults.style.display = 'block';
-            showMessage('records-message', `找到 ${results.length} 條匹配度70%以上的記錄，已按匹配度排序`, 'success');
+            showMessage('records-message', `找到 ${results.length} 條匹配度50%以上的記錄，已按匹配度排序`, 'success');
         }
         
         // 計算匹配度
