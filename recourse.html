@@ -257,6 +257,31 @@
             background: #f1f7ff;
         }
         
+        /* 修改序號欄位樣式，確保所有行都保持綠色 */
+        .record-table td:first-child,
+        .record-table th:first-child {
+            background-color: var(--secondary) !important;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        /* 確保奇數行的序號欄位也是綠色 */
+        .record-table tr:nth-child(odd) td:first-child {
+            background-color: var(--secondary) !important;
+        }
+        
+        /* 確保偶數行的序號欄位也是綠色 */
+        .record-table tr:nth-child(even) td:first-child {
+            background-color: var(--secondary) !important;
+        }
+        
+        /* 確保鼠標懸停時的序號欄位也是綠色 */
+        .record-table tr:hover td:first-child {
+            background-color: var(--secondary) !important;
+            color: white;
+        }
+        
         .status-badge {
             display: inline-block;
             padding: 6px 14px;
@@ -777,6 +802,8 @@
                             <option value="消防處">消防處</option>
                             <option value="NP360熱線中心">NP360熱線中心</option>
                             <option value="NP360纜車求助熱線">NP360纜車求助熱線</option>
+                            <!-- 新增：其他選項 -->
+                            <option value="其他">其他</option>
                         </select>
                         <div id="other-source-input" class="other-source-input">
                             <input type="text" id="other-source" placeholder="請輸入其他數據來源">
@@ -829,6 +856,8 @@
                                 <th>年齡間距</th>
                                 <th>健康狀況</th>
                                 <th>數據來源</th>
+                                <!-- 新增：備註欄位 -->
+                                <th>備註</th>
                                 <th>狀態</th>
                                 <th>創建時間</th>
                                 <th>操作</th>
@@ -939,6 +968,8 @@
                                 <th>年齡間距</th>
                                 <th>健康狀況</th>
                                 <th>數據來源</th>
+                                <!-- 新增：備註欄位 -->
+                                <th>備註</th>
                                 <th>狀態</th>
                                 <th>創建時間</th>
                                 <th>操作</th>
@@ -1406,6 +1437,8 @@
                         <td>${data.ageRange || '-'}</td>
                         <td>${data.healthStatus || '-'}</td>
                         <td>${data.source || '-'}</td>
+                        <!-- 新增：備註欄位 -->
+                        <td>${data.notes || '-'}</td>
                         <td>${statusBadge}</td>
                         <td>${createdAt}</td>
                         <td>
@@ -1964,6 +1997,8 @@
                     <td>${record.ageRange || '-'}</td>
                     <td>${record.healthStatus || '-'}</td>
                     <td>${record.source || '-'}</td>
+                    <!-- 新增：備註欄位 -->
+                    <td>${record.notes || '-'}</td>
                     <td>${statusBadge}</td>
                     <td>${createdAt}</td>
                     <td>
@@ -2040,6 +2075,8 @@
                     <td>${record.ageRange || '-'}</td>
                     <td>${record.healthStatus || '-'}</td>
                     <td>${record.source || '-'}</td>
+                    <!-- 新增：備註欄位 -->
+                    <td>${record.notes || '-'}</td>
                     <td>${statusBadge}</td>
                     <td>${createdAt}</td>
                     <td>
