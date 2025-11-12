@@ -1047,11 +1047,11 @@
                     <div class="sms-only-container">
                         <input type="checkbox" id="edit-smsOnly" class="sms-only-checkbox" onchange="toggleEditSMSOnly()">
                         <label for="edit-smsOnly" class="sms-only-label">
-                            <i class="fas fa-sms"></i> 只接收短信
+                            <i class="fas fa-sms"></i> 只能接收短信
                         </label>
                     </div>
                     <div class="sms-warning" id="edit-sms-warning">
-                        <i class="fas fa-exclamation-triangle"></i> 選擇「只接收短信」必須提供聯絡電話
+                        <i class="fas fa-exclamation-triangle"></i> 選擇「只能接收短信」必須提供聯絡電話
                     </div>
                 </div>
                 
@@ -1291,7 +1291,7 @@
             
             // 驗證只接收短信必須有聯絡電話
             if (smsOnly && !contactNumber.trim()) {
-                showMessage('save-message', '選擇「只接收短信」必須提供聯絡電話', 'error');
+                showMessage('save-message', '選擇「只能接收短信」必須提供聯絡電話', 'error');
                 document.getElementById('sms-warning').style.display = 'block';
                 document.getElementById('contactNumber').style.borderColor = 'var(--danger)';
                 document.getElementById('contactNumber').focus();
@@ -1299,7 +1299,7 @@
             }
             
             if (smsOnly) {
-                contactNumber = contactNumber + ' (只接收短信)';
+                contactNumber = contactNumber + ' (只能接收短信)';
             } else {
                 if (contactNumber === '' && otherContact !== '') {
                     contactNumber = otherContact;
@@ -1583,11 +1583,11 @@
             document.getElementById('edit-guestName').value = record.guestName || '';
             
             // 處理聯絡方式 - 檢查是否為只接收短信
-            const isSMSOnly = record.contactNumber && record.contactNumber.includes('(只接收短信)');
+            const isSMSOnly = record.contactNumber && record.contactNumber.includes('(只能接收短信)');
             document.getElementById('edit-smsOnly').checked = isSMSOnly;
             if (isSMSOnly) {
                 // 去掉後綴
-                const phoneNumber = record.contactNumber.replace(' (只接收短信)', '');
+                const phoneNumber = record.contactNumber.replace(' (只能接收短信)', '');
                 document.getElementById('edit-contactNumber').value = phoneNumber;
                 document.getElementById('edit-contactNumber').style.borderColor = 'var(--primary)';
             } else {
@@ -1635,7 +1635,7 @@
             
             // 驗證只接收短信必須有聯絡電話
             if (smsOnly && !contactNumber.trim()) {
-                showMessage('edit-message', '選擇「只接收短信」必須提供聯絡電話', 'error');
+                showMessage('edit-message', '選擇「只能接收短信」必須提供聯絡電話', 'error');
                 document.getElementById('edit-sms-warning').style.display = 'block';
                 document.getElementById('edit-contactNumber').style.borderColor = 'var(--danger)';
                 document.getElementById('edit-contactNumber').focus();
@@ -1644,7 +1644,7 @@
             
             // 處理聯絡方式
             if (smsOnly) {
-                contactNumber = contactNumber + ' (只接收短信)';
+                contactNumber = contactNumber + ' (只能接收短信)';
             }
             
             try {
