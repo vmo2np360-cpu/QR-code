@@ -134,7 +134,7 @@
         input:focus, select:focus, textarea:focus {
             border-color: var(--primary);
             outline: none;
-            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+            box-shadow: 0 0 0 3px rgba(244, 116, 66, 0.2);
         }
         
         .btn {
@@ -362,9 +362,10 @@
         
         .comparison-item {
             padding: 15px;
-            border: 1px solid #e1e5eb;
+            border: 1px solid #8fb8f5;
             border-radius: 8px;
             margin-bottom: 15px;
+            background: rgb(145, 190, 250); /* 改為白色背景 */
         }
         
         .comparison-header {
@@ -382,7 +383,7 @@
         }
         
         .match-high {
-            background: #e6f4ea;
+            background: #ecf4e6;
             color: var(--secondary);
         }
         
@@ -535,6 +536,7 @@
         .health-stat-card.yellow { border-left: 5px solid #FBBC05; }
         .health-stat-card.red { border-left: 5px solid #EA4335; }
         .health-stat-card.black { border-left: 5px solid #5f6368; }
+        .health-stat-card.gray { border-left: 5px solid #9E9E9E; }
         
         .other-source-input {
             margin-top: 10px;
@@ -633,6 +635,32 @@
             display: none;
         }
         
+        /* 新增：比較結果樣式 */
+        .comparison-row {
+            background-color: white; /* 改為白色背景 */
+            border-left: 4px solid var(--primary);
+        }
+        
+        .comparison-cell {
+            padding: 15px;
+            border-top: 1px solid #e1e5eb;
+            border-bottom: 1px solid #e1e5eb;
+            background: white; /* 確保背景為白色 */
+        }
+        
+        .comparison-toggle {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .comparison-toggle:hover {
+            text-decoration: underline;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 0 10px;
@@ -726,8 +754,8 @@
                         <input type="text" id="guestName" placeholder="請輸入賓客全名">
                         <div style="margin-top: 8px;">
                             <button type="button" class="btn" style="padding: 8px 12px; font-size: 14px;" 
-                                    onclick="document.getElementById('guestName').value = '不便透露'">
-                                <i class="fas fa-eye-slash"></i> 設為「不便透露」
+                                    onclick="document.getElementById('guestName').value = '未能提供'">
+                                <i class="fas fa-eye-slash"></i> 設為「未能提供」
                             </button>
                         </div>
                     </div>
@@ -740,11 +768,11 @@
                         <div class="sms-only-container">
                             <input type="checkbox" id="smsOnly" class="sms-only-checkbox" onchange="toggleSMSOnly()">
                             <label for="smsOnly" class="sms-only-label">
-                                <i class="fas fa-sms"></i> 只接收短信
+                                <i class="fas fa-sms"></i> 只能接收短信
                             </label>
                         </div>
                         <div class="sms-warning" id="sms-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 選擇「只接收短信」必須提供聯絡電話
+                            <i class="fas fa-exclamation-triangle"></i> 選擇「只能接收短信」必須提供聯絡電話
                         </div>
                         
                         <div class="contact-options">
@@ -791,6 +819,7 @@
                             <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
                             <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
                             <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
+                            <option value="未能分類">未能分類</option>
                         </select>
                     </div>
                     
@@ -848,14 +877,14 @@
                     <table class="record-table">
                         <thead>
                             <tr>
-                                <th>序號</th>
+                                <th>編號</th>
                                 <th>車廂號碼</th>
                                 <th>賓客姓名</th>
                                 <th>聯絡方式</th>
                                 <th>性別</th>
                                 <th>年齡間距</th>
                                 <th>健康狀況</th>
-                                <th>數據來源</th>
+                                <th>資料來源</th>
                                 <!-- 新增：備註欄位 -->
                                 <th>備註</th>
                                 <th>狀態</th>
@@ -867,12 +896,6 @@
                             <!-- 求助記錄將動態載入 -->
                         </tbody>
                     </table>
-                </div>
-                
-                <!-- 對比結果區域 -->
-                <div id="comparison-results" class="comparison-results">
-                    <h3><i class="fas fa-chart-bar"></i> 對比結果 (僅顯示匹配度50%以上)</h3>
-                    <div id="results-list"></div>
                 </div>
             </div>
         </div>
@@ -917,15 +940,24 @@
                         <div class="number" id="black-count-stat">0</div>
                         <div class="label">黑色(沒有生命體徵)</div>
                     </div>
+                    <div class="health-stat-card gray">
+                        <div class="number" id="unknown-count-stat">0</div>
+                        <div class="label">未能分類</div>
+                    </div>
                 </div>
                 
                 <div class="card">
                     <h3><i class="fas fa-filter"></i> 記錄篩選</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div class="form-group">
-                            <label for="filter-source">數據來源</label>
+                            <label for="filter-source">資料來源</label>
                             <select id="filter-source" onchange="filterThirdPartyRecords()">
                                 <option value="">所有來源</option>
+                                <option value="警察(999報案中心)">警察(999報案中心)</option>
+                                <option value="消防處">消防處</option>
+                                <option value="NP360熱線中心">NP360熱線中心</option>
+                                <option value="NP360纜車求助熱線">NP360纜車求助熱線</option>
+                                <option value="其他">其他</option>
                             </select>
                         </div>
                         
@@ -937,6 +969,7 @@
                                 <option value="黃色(第二優先)">黃色(第二優先)</option>
                                 <option value="紅色(第一優先)">紅色(第一優先)</option>
                                 <option value="黑色(沒有生命體徵)">黑色(沒有生命體徵)</option>
+                                <option value="未能分類">未能分類</option>
                             </select>
                         </div>
                         
@@ -1057,6 +1090,7 @@
                         <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
                         <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
                         <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
+                        <option value="未能分類">未能分類</option>
                     </select>
                 </div>
                 
@@ -1103,6 +1137,7 @@
         let allThirdPartyRecords = [];
         let filteredThirdPartyRecords = [];
         let currentEditingRecordId = null;
+        let expandedComparisonRow = null; // 追蹤當前展開的比較行
         
         // 頁面載入時初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -1351,13 +1386,13 @@
                 filteredList.innerHTML = '';
                 
                 let total = 0;
-                let greenCount = 0, yellowCount = 0, redCount = 0, blackCount = 0, processedCount = 0, pendingCount = 0;
+                let greenCount = 0, yellowCount = 0, redCount = 0, blackCount = 0, unknownCount = 0, processedCount = 0, pendingCount = 0;
                 const sources = new Set();
                 
                 allThirdPartyRecords = []; // 重置所有記錄
                 
                 // 修復：使用明確的計數器而不是依賴index
-                let recordIndex = 0;
+                let recordIndex = snapshot.size; // 從總數開始，實現正序編號
                 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
@@ -1407,6 +1442,7 @@
                         else if (data.healthStatus.includes('黃色')) yellowCount++;
                         else if (data.healthStatus.includes('紅色')) redCount++;
                         else if (data.healthStatus.includes('黑色')) blackCount++;
+                        else if (data.healthStatus.includes('未能分類')) unknownCount++;
                     }
                     
                     // 處理狀態統計
@@ -1424,10 +1460,11 @@
                         statusBadge = '<span class="status-badge status-pending">待處理</span>';
                     }
                     
-                    // 修復：使用明確的計數器
-                    recordIndex++;
+                    // 修復：使用明確的計數器，實現正序編號
+                    recordIndex--;
                     
                     const row = document.createElement('tr');
+                    row.id = `record-row-${id}`;
                     row.innerHTML = `
                         <td>${recordIndex}</td>
                         <td>${data.cabinNumber || '-'}</td>
@@ -1442,7 +1479,7 @@
                         <td>${statusBadge}</td>
                         <td>${createdAt}</td>
                         <td>
-                            <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${id}')">
+                            <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${id}', this)">
                                 <i class="fas fa-search"></i> 對比
                             </button>
                             <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="editRecord('${id}')">
@@ -1461,8 +1498,13 @@
                     
                     recordsList.appendChild(row);
                     
-                    // 同時添加到篩選列表
+                    // 同時添加到篩選列表（數據統計頁面）
                     const filteredRow = row.cloneNode(true);
+                    // 在數據統計頁面移除對比按鈕
+                    const compareButton = filteredRow.querySelector('button[onclick*="compareSingleRecord"]');
+                    if (compareButton) {
+                        compareButton.remove();
+                    }
                     filteredList.appendChild(filteredRow);
                     
                     total++;
@@ -1478,16 +1520,7 @@
                 document.getElementById('yellow-count-stat').textContent = yellowCount;
                 document.getElementById('red-count-stat').textContent = redCount;
                 document.getElementById('black-count-stat').textContent = blackCount;
-                
-                // 更新來源篩選選項
-                const sourceFilter = document.getElementById('filter-source');
-                sourceFilter.innerHTML = '<option value="">所有來源</option>';
-                sources.forEach(source => {
-                    const option = document.createElement('option');
-                    option.value = source;
-                    option.textContent = source;
-                    sourceFilter.appendChild(option);
-                });
+                document.getElementById('unknown-count-stat').textContent = unknownCount;
                 
                 // 保存篩選記錄
                 filteredThirdPartyRecords = [...allThirdPartyRecords];
@@ -1642,7 +1675,7 @@
         }
         
         // 對比單個求助記錄
-        async function compareSingleRecord(recordId) {
+        async function compareSingleRecord(recordId, buttonElement) {
             const record = allThirdPartyRecords.find(r => r.id === recordId);
             
             if (!record) {
@@ -1650,9 +1683,15 @@
                 return;
             }
             
-            // 檢查是否有車廂號碼
-            if (!record.cabinNumber || record.cabinNumber.trim() === '') {
-                showMessage('records-message', '無法進行匹配：求助記錄中沒有車廂號碼', 'error');
+            // 如果已經有展開的比較行，先關閉它
+            if (expandedComparisonRow && expandedComparisonRow !== recordId) {
+                closeComparisonResults(expandedComparisonRow);
+            }
+            
+            // 如果點擊的是已經展開的行，則關閉它
+            if (expandedComparisonRow === recordId) {
+                closeComparisonResults(recordId);
+                expandedComparisonRow = null;
                 return;
             }
             
@@ -1667,39 +1706,33 @@
                     const data = doc.data();
                     let match = false;
                     
-                    // 首先檢查車廂號碼是否一致（大小寫不敏感）
+                    // 檢查每個字段的匹配情況（大小寫不敏感）
                     const recordCabin = data.cabinNumber ? data.cabinNumber.toLowerCase().trim() : '';
                     const inputCabin = record.cabinNumber ? record.cabinNumber.toLowerCase().trim() : '';
                     
-                    // 只有車廂號碼一致才進行後續匹配
-                    if (recordCabin === inputCabin) {
-                        // 檢查其他字段的匹配情況（大小寫不敏感）
-                        const recordName = data.guestName ? data.guestName.toLowerCase().trim() : '';
-                        const inputName = record.guestName ? record.guestName.toLowerCase().trim() : '';
-                        
-                        const recordContact = data.contactNumber ? data.contactNumber.toLowerCase().trim() : '';
-                        const inputContact = record.contactNumber ? record.contactNumber.toLowerCase().trim() : '';
-                        
-                        const recordGender = data.gender || '';
-                        const inputGender = record.gender || '';
-                        
-                        const recordAgeRange = data.ageRange || '';
-                        const inputAgeRange = record.ageRange || '';
-                        
-                        const recordHealth = data.healthStatus || '';
-                        const inputHealth = record.healthStatus || '';
-                        
-                        // 如果有任何一個其他字段匹配，就認為是潛在匹配
-                        if ((record.guestName && recordName === inputName) ||
-                            (record.contactNumber && recordContact === inputContact) ||
-                            (record.gender && recordGender === inputGender) ||
-                            (record.ageRange && recordAgeRange === inputAgeRange) ||
-                            (record.healthStatus && recordHealth === inputHealth)) {
-                            match = true;
-                        } else {
-                            // 即使其他字段都不匹配，只要車廂號碼一致，也進行匹配度計算
-                            match = true;
-                        }
+                    const recordName = data.guestName ? data.guestName.toLowerCase().trim() : '';
+                    const inputName = record.guestName ? record.guestName.toLowerCase().trim() : '';
+                    
+                    const recordContact = data.contactNumber ? data.contactNumber.toLowerCase().trim() : '';
+                    const inputContact = record.contactNumber ? record.contactNumber.toLowerCase().trim() : '';
+                    
+                    const recordGender = data.gender || '';
+                    const inputGender = record.gender || '';
+                    
+                    const recordAgeRange = data.ageRange || '';
+                    const inputAgeRange = record.ageRange || '';
+                    
+                    const recordHealth = data.healthStatus || '';
+                    const inputHealth = record.healthStatus || '';
+                    
+                    // 如果有任何一個字段匹配，就認為是潛在匹配
+                    if ((record.cabinNumber && recordCabin === inputCabin) ||
+                        (record.guestName && recordName === inputName) ||
+                        (record.contactNumber && recordContact === inputContact) ||
+                        (record.gender && recordGender === inputGender) ||
+                        (record.ageRange && recordAgeRange === inputAgeRange) ||
+                        (record.healthStatus && recordHealth === inputHealth)) {
+                        match = true;
                     }
                     
                     if (match) {
@@ -1729,7 +1762,9 @@
                     gender: record.gender,
                     ageRange: record.ageRange,
                     healthStatus: record.healthStatus
-                });
+                }, recordId, buttonElement);
+                
+                expandedComparisonRow = recordId;
                 
             } catch (error) {
                 console.error('查詢失敗:', error);
@@ -1738,113 +1773,151 @@
         }
         
         // 顯示對比結果
-        function displayComparisonResults(results, inputData) {
-            const resultsList = document.getElementById('results-list');
-            const comparisonResults = document.getElementById('comparison-results');
+        function displayComparisonResults(results, inputData, recordId, buttonElement) {
+            // 找到對應的記錄行
+            const recordRow = document.getElementById(`record-row-${recordId}`);
+            if (!recordRow) return;
             
-            if (results.length === 0) {
-                resultsList.innerHTML = '<div class="message message-info">未找到匹配度50%以上的記錄</div>';
-                comparisonResults.style.display = 'block';
+            // 檢查是否已經有比較結果行
+            let existingComparisonRow = document.getElementById(`comparison-row-${recordId}`);
+            if (existingComparisonRow) {
+                existingComparisonRow.remove();
                 return;
             }
             
-            resultsList.innerHTML = '';
+            // 創建比較結果行
+            const comparisonRow = document.createElement('tr');
+            comparisonRow.id = `comparison-row-${recordId}`;
+            comparisonRow.className = 'comparison-row';
             
-            results.forEach(record => {
-                // 計算匹配度
-                const matchScore = record.matchScore;
+            const comparisonCell = document.createElement('td');
+            comparisonCell.className = 'comparison-cell';
+            comparisonCell.colSpan = 12; // 佔滿所有列
+            
+            if (results.length === 0) {
+                comparisonCell.innerHTML = '<div class="message message-info">未找到匹配度50%以上的記錄</div>';
+            } else {
+                let resultsHTML = `<h4 style="margin-bottom: 15px; color: var(--primary);">對比結果 (找到 ${results.length} 條匹配度50%以上的記錄)</h4>`;
                 
-                const resultItem = document.createElement('div');
-                resultItem.className = 'comparison-item';
+                results.forEach(record => {
+                    // 計算匹配度
+                    const matchScore = record.matchScore;
+                    
+                    // 確定匹配級別
+                    let matchLevel = 'low';
+                    let matchText = '低匹配度';
+                    
+                    if (matchScore >= 80) {
+                        matchLevel = 'high';
+                        matchText = '高匹配度';
+                    } else if (matchScore >= 50) {
+                        matchLevel = 'medium';
+                        matchText = '中等匹配度';
+                    }
+                    
+                    resultsHTML += `
+                        <div class="comparison-item">
+                            <div class="comparison-header">
+                                <h5>${record.guestName || '未提供姓名'} - 車廂 ${record.cabinNumber || '未指定'}</h5>
+                                <span class="match-level match-${matchLevel}">${matchText} (${matchScore}%)</span>
+                            </div>
+                            <div class="comparison-details">
+                                <div>
+                                    <h6>求助記錄數據</h6>
+                                    <div class="comparison-field">
+                                        <span class="field-label">車廂號碼:</span> ${inputData.cabinNumber || '未提供'}
+                                        <span class="field-match ${inputData.cabinNumber && inputData.cabinNumber.toLowerCase().trim() === (record.cabinNumber || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">賓客姓名:</span> ${inputData.guestName || '未提供'}
+                                        <span class="field-match ${inputData.guestName && inputData.guestName.toLowerCase().trim() === (record.guestName || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">聯絡方式:</span> ${inputData.contactNumber || '未提供'}
+                                        <span class="field-match ${inputData.contactNumber && inputData.contactNumber.toLowerCase().trim() === (record.contactNumber || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">性別:</span> ${inputData.gender || '未提供'}
+                                        <span class="field-match ${inputData.gender && inputData.gender === record.gender ? 'match-true' : 'match-false'}"></span>
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">年齡間距:</span> ${inputData.ageRange || '未提供'}
+                                        <span class="field-match ${inputData.ageRange && inputData.ageRange === record.ageRange ? 'match-true' : 'match-false'}"></span>
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">健康狀況:</span> ${inputData.healthStatus || '未提供'}
+                                        <span class="field-match ${inputData.healthStatus && inputData.healthStatus === record.healthStatus ? 'match-true' : 'match-false'}"></span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h6>系統中的記錄</h6>
+                                    <div class="comparison-field">
+                                        <span class="field-label">車廂號碼:</span> ${record.cabinNumber || '未指定'}
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">賓客姓名:</span> ${record.guestName || '未提供'}
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">聯絡方式:</span> ${record.contactNumber || '未提供'}
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">性別:</span> ${record.gender || '未提供'}
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">年齡間距:</span> ${record.ageRange || '未提供'}
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">健康狀況:</span> ${record.healthStatus || '未提供'}
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">組別:</span> ${record.groupNumber ? '第' + record.groupNumber + '組' : '未指定'}
+                                    </div>
+                                    <div class="comparison-field">
+                                        <span class="field-label">狀態:</span> 
+                                        <span class="status-badge ${record.status === 'completed' ? 'status-complete' : 'status-pending'}">
+                                            ${record.status === 'completed' ? '已完成' : '處理中'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="comparison-actions">
+                                <button class="btn btn-secondary" onclick="markRescueRecordAsRescued('${record.id}', '${record.cabinNumber || ''}', '${record.guestName || ''}')">
+                                    <i class="fas fa-check"></i> 求助個案已救援
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
                 
-                // 確定匹配級別
-                let matchLevel = 'low';
-                let matchText = '低匹配度';
-                
-                if (matchScore >= 80) {
-                    matchLevel = 'high';
-                    matchText = '高匹配度';
-                } else if (matchScore >= 50) {
-                    matchLevel = 'medium';
-                    matchText = '中等匹配度';
+                comparisonCell.innerHTML = resultsHTML;
+            }
+            
+            comparisonRow.appendChild(comparisonCell);
+            
+            // 在記錄行之後插入比較結果行
+            recordRow.parentNode.insertBefore(comparisonRow, recordRow.nextSibling);
+            
+            // 更新按鈕文本
+            if (buttonElement) {
+                buttonElement.innerHTML = '<i class="fas fa-times"></i> 關閉對比';
+            }
+        }
+        
+        // 關閉比較結果
+        function closeComparisonResults(recordId) {
+            const comparisonRow = document.getElementById(`comparison-row-${recordId}`);
+            if (comparisonRow) {
+                comparisonRow.remove();
+            }
+            
+            // 重置按鈕文本
+            const recordRow = document.getElementById(`record-row-${recordId}`);
+            if (recordRow) {
+                const compareButton = recordRow.querySelector('button[onclick*="compareSingleRecord"]');
+                if (compareButton) {
+                    compareButton.innerHTML = '<i class="fas fa-search"></i> 對比';
                 }
-                
-                resultItem.innerHTML = `
-                    <div class="comparison-header">
-                        <h4>${record.guestName || '未提供姓名'} - 車廂 ${record.cabinNumber || '未指定'}</h4>
-                        <span class="match-level match-${matchLevel}">${matchText} (${matchScore}%)</span>
-                    </div>
-                    <div class="comparison-details">
-                        <div>
-                            <h5>求助記錄數據</h5>
-                            <div class="comparison-field">
-                                <span class="field-label">車廂號碼:</span> ${inputData.cabinNumber || '未提供'}
-                                <span class="field-match ${inputData.cabinNumber && inputData.cabinNumber.toLowerCase().trim() === (record.cabinNumber || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">賓客姓名:</span> ${inputData.guestName || '未提供'}
-                                <span class="field-match ${inputData.guestName && inputData.guestName.toLowerCase().trim() === (record.guestName || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">聯絡方式:</span> ${inputData.contactNumber || '未提供'}
-                                <span class="field-match ${inputData.contactNumber && inputData.contactNumber.toLowerCase().trim() === (record.contactNumber || '').toLowerCase().trim() ? 'match-true' : 'match-false'}"></span>
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">性別:</span> ${inputData.gender || '未提供'}
-                                <span class="field-match ${inputData.gender && inputData.gender === record.gender ? 'match-true' : 'match-false'}"></span>
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">年齡間距:</span> ${inputData.ageRange || '未提供'}
-                                <span class="field-match ${inputData.ageRange && inputData.ageRange === record.ageRange ? 'match-true' : 'match-false'}"></span>
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">健康狀況:</span> ${inputData.healthStatus || '未提供'}
-                                <span class="field-match ${inputData.healthStatus && inputData.healthStatus === record.healthStatus ? 'match-true' : 'match-false'}"></span>
-                            </div>
-                        </div>
-                        <div>
-                            <h5>系統中的記錄</h5>
-                            <div class="comparison-field">
-                                <span class="field-label">車廂號碼:</span> ${record.cabinNumber || '未指定'}
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">賓客姓名:</span> ${record.guestName || '未提供'}
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">聯絡方式:</span> ${record.contactNumber || '未提供'}
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">性別:</span> ${record.gender || '未提供'}
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">年齡間距:</span> ${record.ageRange || '未提供'}
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">健康狀況:</span> ${record.healthStatus || '未提供'}
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">組別:</span> ${record.groupNumber ? '第' + record.groupNumber + '組' : '未指定'}
-                            </div>
-                            <div class="comparison-field">
-                                <span class="field-label">狀態:</span> 
-                                <span class="status-badge ${record.status === 'completed' ? 'status-complete' : 'status-pending'}">
-                                    ${record.status === 'completed' ? '已完成' : '處理中'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="comparison-actions">
-                        <button class="btn btn-secondary" onclick="markRescueRecordAsRescued('${record.id}', '${record.cabinNumber || ''}', '${record.guestName || ''}')">
-                            <i class="fas fa-check"></i> 求助個案已救援
-                        </button>
-                    </div>
-                `;
-                
-                resultsList.appendChild(resultItem);
-            });
-            
-            comparisonResults.style.display = 'block';
-            showMessage('records-message', `找到 ${results.length} 條匹配度50%以上的記錄，已按匹配度排序`, 'success');
+            }
         }
         
         // 計算匹配度
@@ -1945,9 +2018,19 @@
             filteredThirdPartyRecords = allThirdPartyRecords.filter(record => {
                 let match = true;
                 
-                // 來源篩選
-                if (sourceFilter && record.source !== sourceFilter) {
-                    match = false;
+                // 來源篩選 - 修改邏輯以處理"其他"來源
+                if (sourceFilter) {
+                    if (sourceFilter === '其他') {
+                        // 當選擇"其他"時，篩選不屬於預設來源的記錄
+                        const defaultSources = ['警察(999報案中心)', '消防處', 'NP360熱線中心', 'NP360纜車求助熱線'];
+                        if (defaultSources.includes(record.source)) {
+                            match = false;
+                        }
+                    } else {
+                        if (record.source !== sourceFilter) {
+                            match = false;
+                        }
+                    }
                 }
                 
                 // 健康狀況篩選
@@ -1974,7 +2057,8 @@
             
             // 顯示篩選結果
             // 修復：使用明確的計數器
-            let filterIndex = 0;
+            let filterIndex = filteredThirdPartyRecords.length; // 從總數開始，實現正序編號
+            
             filteredThirdPartyRecords.forEach((record) => {
                 // 修復：正確處理日期顯示
                 let createdAt;
@@ -1996,8 +2080,8 @@
                     statusBadge = '<span class="status-badge status-pending">待處理</span>';
                 }
                 
-                // 修復：使用明確的計數器
-                filterIndex++;
+                // 修復：使用明確的計數器，實現正序編號
+                filterIndex--;
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -2014,9 +2098,6 @@
                     <td>${statusBadge}</td>
                     <td>${createdAt}</td>
                     <td>
-                        <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${record.id}')">
-                            <i class="fas fa-search"></i> 對比
-                        </button>
                         <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="editRecord('${record.id}')">
                             <i class="fas fa-edit"></i> 編輯
                         </button>
@@ -2052,7 +2133,8 @@
             
             // 顯示搜索結果
             // 修復：使用明確的計數器
-            let searchIndex = 0;
+            let searchIndex = searchResults.length; // 從總數開始，實現正序編號
+            
             searchResults.forEach((record) => {
                 // 修復：正確處理日期顯示
                 let createdAt;
@@ -2074,10 +2156,11 @@
                     statusBadge = '<span class="status-badge status-pending">待處理</span>';
                 }
                 
-                // 修復：使用明確的計數器
-                searchIndex++;
+                // 修復：使用明確的計數器，實現正序編號
+                searchIndex--;
                 
                 const row = document.createElement('tr');
+                row.id = `record-row-${record.id}`;
                 row.innerHTML = `
                     <td>${searchIndex}</td>
                     <td>${record.cabinNumber || '-'}</td>
@@ -2092,7 +2175,7 @@
                     <td>${statusBadge}</td>
                     <td>${createdAt}</td>
                     <td>
-                        <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${record.id}')">
+                        <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="compareSingleRecord('${record.id}', this)">
                             <i class="fas fa-search"></i> 對比
                         </button>
                         <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="editRecord('${record.id}')">
