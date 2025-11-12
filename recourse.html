@@ -727,7 +727,7 @@
                     <span>OCC求助信息記錄系統</span>
                 </div>
                 <div style="font-size: 0.9rem; opacity: 0.9;">
-                    獨立數據存儲，不影響主系統記錄
+                    獨立資料存儲，不影響主系統記錄
                 </div>
             </div>
         </header>
@@ -1000,7 +1000,7 @@
                                 <th>性別</th>
                                 <th>年齡間距</th>
                                 <th>健康狀況</th>
-                                <th>資源來源</th>
+                                <th>資料來源</th>
                                 <!-- 新增：備註欄位 -->
                                 <th>備註</th>
                                 <th>狀態</th>
@@ -1315,7 +1315,7 @@
             if (source === '其他') {
                 source = document.getElementById('other-source').value;
                 if (!source) {
-                    showMessage('save-message', '請輸入其他數據來源', 'error');
+                    showMessage('save-message', '請輸入其他資料來源', 'error');
                     return;
                 }
             }
