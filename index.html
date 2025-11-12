@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>纜車賓客QR碼管理系統 - 完整版本</title>
+    <title>QR碼救援記錄管理系統</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -850,6 +850,7 @@
             display: flex;
             gap: 10px;
             margin-top: 8px;
+            flex-wrap: wrap;
         }
         
         .contact-btn {
@@ -860,6 +861,7 @@
             cursor: pointer;
             flex: 1;
             text-align: center;
+            min-width: 120px;
         }
         
         .contact-btn:hover {
@@ -870,6 +872,21 @@
             background: var(--primary);
             color: white;
             border-color: var(--primary);
+        }
+        
+        .contact-sms-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .contact-other-input {
+            margin-top: 8px;
+            display: none;
         }
         
         /* 救護車車牌輸入框 */
@@ -1060,6 +1077,84 @@
             background: #FBBC05;
         }
         
+        /* 新增：編輯按鈕樣式 */
+        .edit-btn {
+            background: var(--warning);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .edit-btn:hover {
+            background: #e6a700;
+            transform: translateY(-1px);
+        }
+        
+        /* 編輯模態框樣式 */
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .edit-modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .edit-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .edit-modal-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .close-edit-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--gray);
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .close-edit-modal:hover {
+            color: var(--danger);
+        }
+        
+        /* 其他方式输入框样式 */
+        .other-exit-method {
+            display: none;
+            margin-top: 8px;
+        }
+        
         /* 移动端适配 */
         @media (max-width: 768px) {
             /* 移动设备優化 - 隱藏系統介紹卡片 */
@@ -1228,6 +1323,15 @@
                 font-size: 1.8rem;
             }
             
+            /* 聯絡方式按鈕優化 */
+            .contact-options {
+                flex-direction: column;
+            }
+            
+            .contact-btn {
+                min-width: 100%;
+            }
+            
             /* 其他原有移动端样式 */
             .header-content {
                 flex-direction: column;
@@ -1286,6 +1390,12 @@
             .rescue-map-toolbar {
                 flex-direction: column;
                 align-items: stretch;
+            }
+            
+            /* 编辑模态框移动端优化 */
+            .edit-modal-content {
+                padding: 20px;
+                max-width: 95%;
             }
         }
         
@@ -1559,20 +1669,20 @@
         <div class="header-content">
             <div class="logo">
                 <span class="logo-icon">🚠</span>
-                <span>纜車賓客QR碼管理系統</span>
+                <span>QR碼救援記錄管理系統</span>
             </div>
             <nav class="no-print">
                 <button class="nav-btn active" data-target="creator-section">
-                    <i class="fas fa-user-plus"></i> 資料輸入
+                    <i class="fas fa-user-plus"></i> Ground Support Team 被救者記錄
                 </button>
                 <button class="nav-btn" data-target="updater-section">
-                    <i class="fas fa-qrcode"></i> 資料更新
+                    <i class="fas fa-qrcode"></i> Assembly Point 被救者記錄
                 </button>
                 <button class="nav-btn" data-target="dashboard-section">
                     <i class="fas fa-chart-line"></i> 監控面板
                 </button>
                 <button class="nav-btn" data-target="rescue-map-section">
-                    <i class="fas fa-map"></i> 救援地圖
+                    <i class="fas fa-map"></i> OCC救援地圖
                 </button>
             </nav>
         </div>
@@ -1583,12 +1693,12 @@
         <div class="system-info">
             <div class="info-card" onclick="showSection('creator-section')">
                 <i class="fas fa-ticket-alt"></i>
-                <h3>快速建立記錄</h3>
+                <h3>Ground Support Team被救者記錄</h3>
                 <p>輸入基本賓客資訊，系統即時生成專屬QR碼，方便後續追蹤與管理。</p>
             </div>
             <div class="info-card" onclick="showSection('updater-section')">
                 <i class="fas fa-mobile-alt"></i>
-                <h3>掃碼更新資料</h3>
+                <h3>Assembly Point 被救者記錄</h3>
                 <p>使用行動裝置掃描QR碼，更新離場資訊。</p>
             </div>
             <div class="info-card" onclick="showSection('dashboard-section')">
@@ -1598,14 +1708,14 @@
             </div>
             <div class="info-card" onclick="showSection('rescue-map-section')">
                 <i class="fas fa-map-marked-alt"></i>
-                <h3>救援地圖</h3>
+                <h3>OCC救援地圖</h3>
                 <p>可視化纜車救援狀態，實時監控車廂位置與狀態。</p>
             </div>
         </div>
         
         <!-- 創建者輸入界面 -->
         <div id="creator-section" class="section active">
-            <h2><i class="fas fa-user-plus"></i> 賓客資料輸入</h2>
+            <h2><i class="fas fa-user-plus"></i> 被救者紀錄 (由Ground Support Team輸入)</h2>
             <div id="creator-message" class="message"></div>
             
             <!-- 重复记录警告 -->
@@ -1657,23 +1767,39 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="guestName"><i class="fas fa-user"></i> 賓客姓名</label>
+                    <label for="guestName"><i class="fas fa-user"></i> 被救者姓名</label>
                     <input type="text" id="guestName" placeholder="請輸入賓客全名">
                     <div style="margin-top: 8px;">
                         <button type="button" class="btn" style="padding: 8px 12px; font-size: 14px;" 
-                                onclick="document.getElementById('guestName').value = '不便透露'">
-                            <i class="fas fa-eye-slash"></i> 設為「不便透露」
+                                onclick="document.getElementById('guestName').value = '未能提供'">
+                            <i class="fas fa-eye-slash"></i> 設為「未能提供」
                         </button>
                     </div>
                 </div>
                 
+                <!-- 改善5：聯絡方式改進 -->
                 <div class="form-group">
                     <label for="contactNumber"><i class="fas fa-phone"></i> 聯絡方式</label>
                     <input type="text" id="contactNumber" placeholder="請輸入聯絡電話">
+                    
+                    <!-- 只接收短信選項 -->
+                    <div class="contact-sms-option">
+                        <input type="checkbox" id="smsOnly" onchange="toggleSmsSuffix()">
+                        <label for="smsOnly" style="margin: 0; font-weight: normal;">只能接收短信</label>
+                    </div>
+                    
+                    <!-- 聯絡方式快速選擇 -->
                     <div class="contact-options">
+                        <div class="contact-btn" onclick="setContactType('未能提供')">未能提供</div>
                         <div class="contact-btn" onclick="setContactType('無電話')">無電話</div>
                         <div class="contact-btn" onclick="setContactType('不願提供')">不願提供</div>
-                        <div class="contact-btn" onclick="setContactType('無法溝通')">無法溝通</div>
+                        <div class="contact-btn" onclick="toggleOtherContactInput()">其他</div>
+                    </div>
+                    
+                    <!-- 其他聯絡方式輸入框 -->
+                    <div id="otherContactContainer" class="contact-other-input">
+                        <label for="otherContactInput">請指定其他聯絡方式:</label>
+                        <input type="text" id="otherContactInput" placeholder="請輸入其他聯絡方式">
                     </div>
                 </div>
                 
@@ -1688,10 +1814,10 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="ageRange"><i class="fas fa-birthday-cake"></i> 年齡間距</label>
+                    <label for="ageRange"><i class="fas fa-birthday-cake"></i> 年齡</label>
                     <select id="ageRange">
                         <option value="">請選擇年齡間距</option>
-                        <option value="">不便透露</option>
+                        <option value="">未能提供</option>
                         <option value="0-12">0-12歲</option>
                         <option value="13-17">13-17歲</option>
                         <option value="18-25">18-25歲</option>
@@ -1706,10 +1832,11 @@
                 <div class="form-group">
                     <label for="healthStatus"><i class="fas fa-heartbeat"></i> 健康狀況</label>
                     <select id="healthStatus">
-                        <option value="綠色(第三優先)">綠色(第三優先)正常或傷勢較輕可以自行走動</option>
-                        <option value="黃色(第二優先)">黃色(第二優先)傷勢較為嚴重需要緊急處理</option>
-                        <option value="紅色(第一優先)">紅色(第一優先)有生命危險需要立即進行搶救</option>
-                        <option value="黑色(沒有生命體徵)">黑色(沒有生命體徵)</option>
+                        <option value="綠色(第三優先)">綠色_正常或傷勢較輕可以自由走動_(第三優先)</option>
+                            <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
+                            <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
+                            <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
+                            <option value="未能分類">未能分類</option>
                     </select>
                 </div>
                 
@@ -1774,9 +1901,11 @@
                     <p id="detail-healthStatus" style="padding: 10px; background: #f5f5f5; border-radius: 8px;"></p>
                 </div>
 
+                <!-- 改善3：救護車需求移除預設答案 -->
                 <div class="form-group">
                     <label for="ambulance"><i class="fas fa-ambulance"></i> 救護車需求</label>
                     <select id="ambulance" onchange="toggleAmbulancePlate()">
+                        <option value="">請選擇</option>
                         <option value="不需要">不需要</option>
                         <option value="需要">需要</option>
                     </select>
@@ -1786,16 +1915,23 @@
                     </div>
                 </div>
                 
+                <!-- 改善4：後續處理選擇"其他"時添加輸入框 -->
                 <div class="form-group">
                     <label for="exitMethod"><i class="fas fa-walking"></i> 後續處理</label>
-                    <select id="exitMethod">
+                    <select id="exitMethod" onchange="toggleOtherExitMethod()">
+                        <option value="">請選擇後續處理</option>
                         <option value="正常或傷勢已處理 已離開">正常或傷勢已處理 自行離開</option>
                         <option value="需要在賓客休息區休息">需要在賓客休息區休息</option>
                         <option value="已送院救治">已送院救治</option>
                         <option value="其他">其他</option>
                     </select>
+                    <div id="otherExitMethodContainer" class="other-exit-method">
+                        <label for="otherExitMethodInput" style="margin-top: 10px;">請指定其他後續處理方式:</label>
+                        <input type="text" id="otherExitMethodInput" placeholder="請輸入其他後續處理方式">
+                    </div>
                 </div>
                 
+                <!-- 改善1：離場時間預設為實時 -->
                 <div class="form-group">
                     <label for="exitTime"><i class="fas fa-clock"></i> 離場時間</label>
                     <input type="datetime-local" id="exitTime">
@@ -1895,10 +2031,11 @@
                         <label for="filter-health">健康狀況</label>
                         <select id="filter-health" onchange="filterRecords()">
                             <option value="">所有狀態</option>
-                            <option value="綠色(第三優先)">綠色(第三優先)</option>
-                            <option value="黃色(第二優先)">黃色(第二優先)</option>
-                            <option value="紅色(第一優先)">紅色(第一優先)</option>
-                            <option value="黑色(沒有生命體徵)">黑色(沒有生命體徵)</option>
+                            <option value="綠色(第三優先)">綠色_正常或傷勢較輕可以自由走動_(第三優先)</option>
+                            <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
+                            <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
+                            <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
+                            <option value="未能分類">未能分類</option>
                         </select>
                     </div>
                     
@@ -1962,6 +2099,7 @@
                                 <th>離場時間</th>
                                 <th>狀態</th>
                                 <th>建立時間</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="records-list">
@@ -2190,7 +2328,31 @@
                             
                             <label>賓客姓名: <input id="groupDetailGuestName" name="guestName" placeholder="請輸入賓客全名"></label>
                             
-                            <label>聯絡方式: <input id="groupDetailContactNumber" name="contactNumber" placeholder="請輸入聯絡電話"></label>
+                            <!-- 改善5：組別詳情中的聯絡方式 -->
+                            <div class="form-group">
+                                <label for="groupDetailContactNumber"><i class="fas fa-phone"></i> 聯絡方式</label>
+                                <input type="text" id="groupDetailContactNumber" name="contactNumber" placeholder="請輸入聯絡電話">
+                                
+                                <!-- 只接收短信選項 -->
+                                <div class="contact-sms-option">
+                                    <input type="checkbox" id="groupDetailSmsOnly" onchange="toggleGroupDetailSmsSuffix()">
+                                    <label for="groupDetailSmsOnly" style="margin: 0; font-weight: normal;">只能接收短信</label>
+                                </div>
+                                
+                                <!-- 聯絡方式快速選擇 -->
+                                <div class="contact-options">
+                                    <div class="contact-btn" onclick="setGroupDetailContactType('未能提供')">未能提供</div>
+                                    <div class="contact-btn" onclick="setGroupDetailContactType('無電話')">無電話</div>
+                                    <div class="contact-btn" onclick="setGroupDetailContactType('不願提供')">不願提供</div>
+                                    <div class="contact-btn" onclick="toggleGroupDetailOtherContactInput()">其他</div>
+                                </div>
+                                
+                                <!-- 其他聯絡方式輸入框 -->
+                                <div id="groupDetailOtherContactContainer" class="contact-other-input">
+                                    <label for="groupDetailOtherContactInput">請指定其他聯絡方式:</label>
+                                    <input type="text" id="groupDetailOtherContactInput" placeholder="請輸入其他聯絡方式">
+                                </div>
+                            </div>
                             
                             <!-- 性別改為選填 -->
                             <label>性別: 
@@ -2205,7 +2367,7 @@
                             <label>年齡間距: 
                                 <select id="groupDetailAgeRange" name="ageRange">
                                     <option value="">請選擇年齡間距</option>
-                                    <option value="">不便透露</option>
+                                    <option value="">未能提供</option>
                                     <option value="0-12">0-12歲</option>
                                     <option value="13-17">13-17歲</option>
                                     <option value="18-25">18-25歲</option>
@@ -2217,17 +2379,22 @@
                                 </select>
                             </label>
                             
+                            <!-- 改善2：救援地圖組別詳情中的健康狀況改為選填 -->
                             <label>健康狀況: 
-                                <select id="groupDetailHealthStatus" name="healthStatus" required>
-                                    <option value="綠色(第三優先)">綠色(第三優先)正常或傷勢較輕可以自行走動</option>
-                                    <option value="黃色(第二優先)">黃色(第二優先)傷勢較為嚴重需要緊急處理</option>
-                                    <option value="紅色(第一優先)">紅色(第一優先)有生命危險需要立即進行搶救</option>
-                                    <option value="黑色(沒有生命體徵)">黑色(沒有生命體徵)</option>
+                                <select id="groupDetailHealthStatus" name="healthStatus">
+                                    <option value="">請選擇健康狀況 (選填)</option>
+                                    <option value="綠色(第三優先)">綠色_正常或傷勢較輕可以自由走動_(第三優先)</option>
+                            <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
+                            <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
+                            <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
+                            <option value="未能分類">未能分類</option>
                                 </select>
                             </label>
                             
+                            <!-- 改善3：救護車需求移除預設答案 -->
                             <label>救護車需求: 
                                 <select id="groupDetailAmbulance" name="ambulance" onchange="toggleGroupAmbulancePlate()">
+                                    <option value="">請選擇</option>
                                     <option value="不需要">不需要</option>
                                     <option value="需要">需要</option>
                                 </select>
@@ -2238,15 +2405,22 @@
                                 <input type="text" id="groupDetailAmbulancePlate" name="ambulancePlate" placeholder="請輸入救護車車牌號碼">
                             </div>
                             
+                            <!-- 改善4：後續處理選擇"其他"時添加輸入框 -->
                             <label>後續處理: 
-                                <select id="groupDetailExitMethod" name="exitMethod">
+                                <select id="groupDetailExitMethod" name="exitMethod" onchange="toggleGroupDetailOtherExitMethod()">
+                                    <option value="">請選擇後續處理</option>
                                     <option value="正常或傷勢已處理 已離開">正常或傷勢已處理 自行離開</option>
                                     <option value="需要在賓客休息區休息">需要在賓客休息區休息</option>
                                     <option value="已送院救治">已送院救治</option>
                                     <option value="其他">其他</option>
                                 </select>
+                                <div id="groupDetailOtherExitMethodContainer" class="other-exit-method">
+                                    <label for="groupDetailOtherExitMethodInput" style="margin-top: 10px;">請指定其他後續處理方式:</label>
+                                    <input type="text" id="groupDetailOtherExitMethodInput" placeholder="請輸入其他後續處理方式">
+                                </div>
                             </label>
                             
+                            <!-- 改善1：離場時間預設為實時 -->
                             <label>離場時間: <input type="datetime-local" id="groupDetailExitTime" name="exitTime"></label>
                             
                             <!-- 修改救援人員字段為選項 -->
@@ -2284,6 +2458,200 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- 新增：編輯記錄模態框 -->
+    <div id="edit-record-modal" class="edit-modal">
+        <div class="edit-modal-content">
+            <div class="edit-modal-header">
+                <h3 class="edit-modal-title">
+                    <i class="fas fa-edit"></i> 編輯賓客記錄
+                </h3>
+                <button class="close-edit-modal" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="edit-message" class="message"></div>
+            
+            <form id="edit-record-form">
+                <input type="hidden" id="edit-docId">
+                
+                <div class="form-group">
+                    <label for="edit-cabinNumber"><i class="fas fa-train"></i> 車廂號碼</label>
+                    <input type="text" id="edit-cabinNumber" placeholder="1-125" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-groupNumber"><i class="fas fa-users"></i> 組別</label>
+                    <select id="edit-groupNumber" required>
+                        <option value="">請選擇組別</option>
+                        <option value="1">第1組</option>
+                        <option value="2">第2組</option>
+                        <option value="3">第3組</option>
+                        <option value="4">第4組</option>
+                        <option value="5">第5組</option>
+                        <option value="6">第6組</option>
+                        <option value="7">第7組</option>
+                        <option value="8">第8組</option>
+                        <option value="9">第9組</option>
+                        <option value="10">第10組</option>
+                        <option value="11">第11組</option>
+                        <option value="12">第12組</option>
+                        <option value="13">第13組</option>
+                        <option value="14">第14組</option>
+                        <option value="15">第15組</option>
+                        <option value="16">第16組</option>
+                        <option value="17">第17組</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-guestName"><i class="fas fa-user"></i> 賓客姓名</label>
+                    <input type="text" id="edit-guestName" placeholder="請輸入賓客全名" required>
+                </div>
+                
+                <!-- 改善5：編輯表單中的聯絡方式 -->
+                <div class="form-group">
+                    <label for="edit-contactNumber"><i class="fas fa-phone"></i> 聯絡方式</label>
+                    <input type="text" id="edit-contactNumber" placeholder="請輸入聯絡電話">
+                    
+                    <!-- 只接收短信選項 -->
+                    <div class="contact-sms-option">
+                        <input type="checkbox" id="edit-smsOnly" onchange="toggleEditSmsSuffix()">
+                        <label for="edit-smsOnly" style="margin: 0; font-weight: normal;">只能接收短信</label>
+                    </div>
+                    
+                    <!-- 聯絡方式快速選擇 -->
+                    <div class="contact-options">
+                        <div class="contact-btn" onclick="setEditContactType('未能提供')">未能提供</div>
+                        <div class="contact-btn" onclick="setEditContactType('無電話')">無電話</div>
+                        <div class="contact-btn" onclick="setEditContactType('不願提供')">不願提供</div>
+                        <div class="contact-btn" onclick="toggleEditOtherContactInput()">其他</div>
+                    </div>
+                    
+                    <!-- 其他聯絡方式輸入框 -->
+                    <div id="edit-otherContactContainer" class="contact-other-input">
+                        <label for="edit-otherContactInput">請指定其他聯絡方式:</label>
+                        <input type="text" id="edit-otherContactInput" placeholder="請輸入其他聯絡方式">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-gender"><i class="fas fa-venus-mars"></i> 性別</label>
+                    <select id="edit-gender">
+                        <option value="">請選擇性別</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-ageRange"><i class="fas fa-birthday-cake"></i> 年齡</label>
+                    <select id="edit-ageRange">
+                        <option value="">請選擇年齡間距</option>
+                        <option value="">未能提供</option>
+                        <option value="0-12">0-12歲</option>
+                        <option value="13-17">13-17歲</option>
+                        <option value="18-25">18-25歲</option>
+                        <option value="26-35">26-35歲</option>
+                        <option value="36-45">36-45歲</option>
+                        <option value="46-55">46-55歲</option>
+                        <option value="56-65">56-65歲</option>
+                        <option value="66+">66歲以上</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-healthStatus"><i class="fas fa-heartbeat"></i> 健康狀況</label>
+                    <select id="edit-healthStatus" required>
+                        <option value="">請選擇健康狀況</option>
+                            <option value="綠色(第三優先)">綠色_正常或傷勢較輕可以自由走動_(第三優先)</option>
+                            <option value="黃色(第二優先)">黃色_傷勢較為嚴重需要緊急處理_(第二優先)</option>
+                            <option value="紅色(第一優先)">紅色_有生命危險需要立即進行搶救_(第一優先)</option>
+                            <option value="黑色(沒有生命體徵)">黑色_(沒有生命體徵)</option>
+                            <option value="未能分類">未能分類</option>
+                    </select>
+                </div>
+                
+                <!-- 改善3：編輯表單中救護車需求移除預設答案 -->
+                <div class="form-group">
+                    <label for="edit-ambulance"><i class="fas fa-ambulance"></i> 救護車需求</label>
+                    <select id="edit-ambulance" onchange="toggleEditAmbulancePlate()">
+                        <option value="">請選擇</option>
+                        <option value="不需要">不需要</option>
+                        <option value="需要">需要</option>
+                    </select>
+                    <div id="edit-ambulancePlateContainer" class="ambulance-plate">
+                        <label for="edit-ambulancePlate" style="margin-top: 10px;">救護車車牌號碼</label>
+                        <input type="text" id="edit-ambulancePlate" placeholder="請輸入救護車車牌號碼">
+                    </div>
+                </div>
+                
+                <!-- 改善4：編輯表單中後續處理選擇"其他"時添加輸入框 -->
+                <div class="form-group">
+                    <label for="edit-exitMethod"><i class="fas fa-walking"></i> 後續處理</label>
+                    <select id="edit-exitMethod" onchange="toggleEditOtherExitMethod()">
+                        <option value="">請選擇後續處理</option>
+                        <option value="正常或傷勢已處理 已離開">正常或傷勢已處理 自行離開</option>
+                        <option value="需要在賓客休息區休息">需要在賓客休息區休息</option>
+                        <option value="已送院救治">已送院救治</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <div id="edit-otherExitMethodContainer" class="other-exit-method">
+                        <label for="edit-otherExitMethodInput" style="margin-top: 10px;">請指定其他後續處理方式:</label>
+                        <input type="text" id="edit-otherExitMethodInput" placeholder="請輸入其他後續處理方式">
+                    </div>
+                </div>
+                
+                <!-- 改善1：編輯表單中離場時間預設為實時 -->
+                <div class="form-group">
+                    <label for="edit-exitTime"><i class="fas fa-clock"></i> 離場時間</label>
+                    <input type="datetime-local" id="edit-exitTime">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-rescuedBy"><i class="fas fa-user-shield"></i> 救援人員</label>
+                    <select id="edit-rescuedBy" onchange="toggleEditOtherRescuerInput()">
+                        <option value="">請選擇救援人員類別</option>
+                        <option value="消防員">消防員</option>
+                        <option value="民安隊">民安隊</option>
+                        <option value="警察">警察</option>
+                        <option value="NP360職員">NP360職員</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <div id="edit-otherRescuerContainer" style="display: none; margin-top: 8px;">
+                        <label for="edit-otherRescuerInput">請指定其他救援人員:</label>
+                        <input type="text" id="edit-otherRescuerInput" placeholder="請輸入其他救援人員">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-timeReachedTop"><i class="fas fa-clock"></i> 開始救援時間</label>
+                    <input type="time" id="edit-timeReachedTop">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-timeLanded"><i class="fas fa-clock"></i> 完成救援時間</label>
+                    <input type="time" id="edit-timeLanded">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-remarks"><i class="fas fa-sticky-note"></i> 備註</label>
+                    <textarea id="edit-remarks" placeholder="請輸入備註"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" class="btn btn-block" onclick="updateRecordFromEdit()">
+                        <i class="fas fa-save"></i> 更新記錄
+                    </button>
+                    <button type="button" class="btn btn-danger btn-block" onclick="closeEditModal()">
+                        <i class="fas fa-times"></i> 取消
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
     
@@ -2326,6 +2694,205 @@
         
         // 救援地圖登入狀態
         let rescueMapLoggedIn = false;
+        
+        // 改善1：設置當前時間為離場時間預設值
+        function setCurrentDateTime() {
+            const now = new Date();
+            // 转换为本地时间字符串，格式为 YYYY-MM-DDTHH:mm
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        
+        // 改善5：切換短信後綴
+        function toggleSmsSuffix() {
+            const contactInput = document.getElementById('contactNumber');
+            const smsCheckbox = document.getElementById('smsOnly');
+            
+            if (smsCheckbox.checked) {
+                // 如果已經有值且沒有後綴，添加後綴
+                if (contactInput.value && !contactInput.value.includes('(只能接收短信)')) {
+                    contactInput.value = contactInput.value + ' (只能接收短信)';
+                }
+            } else {
+                // 移除後綴
+                if (contactInput.value && contactInput.value.includes('(只能接收短信)')) {
+                    contactInput.value = contactInput.value.replace(' (只能接收短信)', '');
+                }
+            }
+        }
+        
+        // 改善5：組別詳情中切換短信後綴
+        function toggleGroupDetailSmsSuffix() {
+            const contactInput = document.getElementById('groupDetailContactNumber');
+            const smsCheckbox = document.getElementById('groupDetailSmsOnly');
+            
+            if (smsCheckbox.checked) {
+                // 如果已經有值且沒有後綴，添加後綴
+                if (contactInput.value && !contactInput.value.includes('(只能接收短信)')) {
+                    contactInput.value = contactInput.value + ' (只能接收短信)';
+                }
+            } else {
+                // 移除後綴
+                if (contactInput.value && contactInput.value.includes('(只能接收短信)')) {
+                    contactInput.value = contactInput.value.replace(' (只能接收短信)', '');
+                }
+            }
+        }
+        
+        // 改善5：編輯表單中切換短信後綴
+        function toggleEditSmsSuffix() {
+            const contactInput = document.getElementById('edit-contactNumber');
+            const smsCheckbox = document.getElementById('edit-smsOnly');
+            
+            if (smsCheckbox.checked) {
+                // 如果已經有值且沒有後綴，添加後綴
+                if (contactInput.value && !contactInput.value.includes('(只能接收短信)')) {
+                    contactInput.value = contactInput.value + ' (只能接收短信)';
+                }
+            } else {
+                // 移除後綴
+                if (contactInput.value && contactInput.value.includes('(只能接收短信)')) {
+                    contactInput.value = contactInput.value.replace(' (只能接收短信)', '');
+                }
+            }
+        }
+        
+        // 改善5：切換其他聯絡方式輸入框
+        function toggleOtherContactInput() {
+            const otherContainer = document.getElementById('otherContactContainer');
+            const contactInput = document.getElementById('contactNumber');
+            
+            if (otherContainer.style.display === 'block') {
+                otherContainer.style.display = 'none';
+                contactInput.disabled = false;
+            } else {
+                otherContainer.style.display = 'block';
+                contactInput.disabled = true;
+                contactInput.value = '';
+                document.getElementById('otherContactInput').focus();
+            }
+        }
+        
+        // 改善5：組別詳情中切換其他聯絡方式輸入框
+        function toggleGroupDetailOtherContactInput() {
+            const otherContainer = document.getElementById('groupDetailOtherContactContainer');
+            const contactInput = document.getElementById('groupDetailContactNumber');
+            
+            if (otherContainer.style.display === 'block') {
+                otherContainer.style.display = 'none';
+                contactInput.disabled = false;
+            } else {
+                otherContainer.style.display = 'block';
+                contactInput.disabled = true;
+                contactInput.value = '';
+                document.getElementById('groupDetailOtherContactInput').focus();
+            }
+        }
+        
+        // 改善5：編輯表單中切換其他聯絡方式輸入框
+        function toggleEditOtherContactInput() {
+            const otherContainer = document.getElementById('edit-otherContactContainer');
+            const contactInput = document.getElementById('edit-contactNumber');
+            
+            if (otherContainer.style.display === 'block') {
+                otherContainer.style.display = 'none';
+                contactInput.disabled = false;
+            } else {
+                otherContainer.style.display = 'block';
+                contactInput.disabled = true;
+                contactInput.value = '';
+                document.getElementById('edit-otherContactInput').focus();
+            }
+        }
+        
+        // 改善5：設定聯絡方式類型
+        function setContactType(type) {
+            const contactInput = document.getElementById('contactNumber');
+            const smsCheckbox = document.getElementById('smsOnly');
+            const otherContainer = document.getElementById('otherContactContainer');
+            
+            // 禁用短信選項
+            smsCheckbox.checked = false;
+            // 隱藏其他輸入框
+            otherContainer.style.display = 'none';
+            contactInput.disabled = false;
+            
+            contactInput.value = type;
+        }
+        
+        // 改善5：組別詳情中設定聯絡方式類型
+        function setGroupDetailContactType(type) {
+            const contactInput = document.getElementById('groupDetailContactNumber');
+            const smsCheckbox = document.getElementById('groupDetailSmsOnly');
+            const otherContainer = document.getElementById('groupDetailOtherContactContainer');
+            
+            // 禁用短信選項
+            smsCheckbox.checked = false;
+            // 隱藏其他輸入框
+            otherContainer.style.display = 'none';
+            contactInput.disabled = false;
+            
+            contactInput.value = type;
+        }
+        
+        // 改善5：編輯表單中設定聯絡方式類型
+        function setEditContactType(type) {
+            const contactInput = document.getElementById('edit-contactNumber');
+            const smsCheckbox = document.getElementById('edit-smsOnly');
+            const otherContainer = document.getElementById('edit-otherContactContainer');
+            
+            // 禁用短信選項
+            smsCheckbox.checked = false;
+            // 隱藏其他輸入框
+            otherContainer.style.display = 'none';
+            contactInput.disabled = false;
+            
+            contactInput.value = type;
+        }
+        
+        // 改善4：切換其他後續處理輸入框
+        function toggleOtherExitMethod() {
+            const exitMethodSelect = document.getElementById('exitMethod');
+            const otherContainer = document.getElementById('otherExitMethodContainer');
+            
+            if (exitMethodSelect.value === '其他') {
+                otherContainer.style.display = 'block';
+            } else {
+                otherContainer.style.display = 'none';
+                document.getElementById('otherExitMethodInput').value = '';
+            }
+        }
+        
+        // 改善4：組別詳情中切換其他後續處理輸入框
+        function toggleGroupDetailOtherExitMethod() {
+            const exitMethodSelect = document.getElementById('groupDetailExitMethod');
+            const otherContainer = document.getElementById('groupDetailOtherExitMethodContainer');
+            
+            if (exitMethodSelect.value === '其他') {
+                otherContainer.style.display = 'block';
+            } else {
+                otherContainer.style.display = 'none';
+                document.getElementById('groupDetailOtherExitMethodInput').value = '';
+            }
+        }
+        
+        // 改善4：編輯表單中切換其他後續處理輸入框
+        function toggleEditOtherExitMethod() {
+            const exitMethodSelect = document.getElementById('edit-exitMethod');
+            const otherContainer = document.getElementById('edit-otherExitMethodContainer');
+            
+            if (exitMethodSelect.value === '其他') {
+                otherContainer.style.display = 'block';
+            } else {
+                otherContainer.style.display = 'none';
+                document.getElementById('edit-otherExitMethodInput').value = '';
+            }
+        }
         
         // 添加時間格式化函數
         function formatFirestoreTimestamp(timestamp) {
@@ -2502,6 +3069,9 @@
             
             // 監聽窗口大小變化
             window.addEventListener('resize', optimizeForMobile);
+            
+            // 改善1：設置離場時間預設值
+            document.getElementById('exitTime').value = setCurrentDateTime();
         });
         
         // 新增：處理用戶登入的函數
@@ -3036,7 +3606,7 @@
                     };
                     
                     // 只有在有新值時才更新字段
-                    if (guestName && guestName !== '不便透露') {
+                    if (guestName && guestName !== '未能提供') {
                         updateData.guestName = guestName;
                     }
                     if (contactNumber) {
@@ -3187,9 +3757,11 @@
             }
         }
         
-        // 生成QR碼（更新為根據健康狀況更改顏色）
-        function generateQRCode(docId, healthStatus) {
-            const qrcodeDiv = document.getElementById('creator-qrcode');
+        // 改善2：統一QR碼生成函數
+        function generateUnifiedQRCode(docId, healthStatus, targetElementId, size = 250) {
+            const qrcodeDiv = document.getElementById(targetElementId);
+            if (!qrcodeDiv) return null;
+            
             qrcodeDiv.innerHTML = '';
             
             const data = JSON.stringify({ 
@@ -3200,14 +3772,68 @@
             // 根據健康狀況獲取顏色
             const qrColor = getQRCodeColor(healthStatus);
             
-            qrCode.update({ 
+            const unifiedQRCode = new QRCodeStyling({
+                width: size,
+                height: size,
                 data: data,
+                image: "",
                 dotsOptions: {
                     color: qrColor,
                     type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#ffffff",
+                },
+                imageOptions: {
+                    crossOrigin: "anonymous",
+                    margin: 10
                 }
             });
-            qrCode.append(qrcodeDiv);
+            
+            unifiedQRCode.append(qrcodeDiv);
+            return unifiedQRCode;
+        }
+
+        // 改善2：修改原有的QR碼生成函數，使用統一函數
+        function generateQRCode(docId, healthStatus) {
+            return generateUnifiedQRCode(docId, healthStatus, 'creator-qrcode', 250);
+        }
+
+        // 改善2：修改救援地圖中的QR碼生成函數
+        function generateGroupQRCode(guestData) {
+            return generateUnifiedQRCode(guestData.docId, guestData.healthStatus, 'group-qrcode', 150);
+        }
+
+        // 改善2：修改地圖QR碼生成函數
+        function generateMapQRCode() {
+            const qrcodeDiv = document.getElementById('map-qrcode');
+            qrcodeDiv.innerHTML = '';
+            
+            const data = JSON.stringify({ 
+                cabinId: currentCabin.id,
+                sequence: currentCabin.fields.sequence,
+                type: 'cabinInfo'
+            });
+            
+            const mapQRCode = new QRCodeStyling({
+                width: 150,
+                height: 150,
+                data: data,
+                image: "",
+                dotsOptions: {
+                    color: "#4267B2",
+                    type: "rounded"
+                },
+                backgroundOptions: {
+                    color: "#ffffff",
+                },
+                imageOptions: {
+                    crossOrigin: "anonymous",
+                    margin: 5
+                }
+            });
+            
+            mapQRCode.append(qrcodeDiv);
         }
         
         // 根據健康狀況獲取QR碼顏色
@@ -3414,12 +4040,10 @@
                     document.getElementById('detail-groupNumber').textContent = data.groupNumber ? `第${data.groupNumber}組` : '-';
                     document.getElementById('detail-healthStatus').textContent = data.healthStatus || '-';
                     
-                    // 預設離場時間為現在
-                    const now = new Date();
-                    document.getElementById('exitTime').value = 
-                        now.toISOString().slice(0, 16);
+                    // 改善1：預設離場時間為現在
+                    document.getElementById('exitTime').value = setCurrentDateTime();
                     
-                    // 設定救護車需求
+                    // 改善3：設定救護車需求
                     if (data.ambulance) {
                         document.getElementById('ambulance').value = data.ambulance;
                         if (data.ambulance === '需要') {
@@ -3427,6 +4051,19 @@
                             if (data.ambulancePlate) {
                                 document.getElementById('ambulancePlate').value = data.ambulancePlate;
                             }
+                        }
+                    } else {
+                        document.getElementById('ambulance').value = '';
+                    }
+                    
+                    // 改善4：設定後續處理
+                    if (data.exitMethod) {
+                        if (data.exitMethod === '其他' && data.otherExitMethod) {
+                            document.getElementById('exitMethod').value = '其他';
+                            document.getElementById('otherExitMethodContainer').style.display = 'block';
+                            document.getElementById('otherExitMethodInput').value = data.otherExitMethod;
+                        } else {
+                            document.getElementById('exitMethod').value = data.exitMethod;
                         }
                     }
                     
@@ -3453,7 +4090,18 @@
             const ambulance = document.getElementById('ambulance').value;
             const ambulancePlate = document.getElementById('ambulancePlate').value;
             
-            if (!exitMethod || !exitTime) {
+            // 改善4：處理其他後續處理方式
+            let finalExitMethod = exitMethod;
+            if (exitMethod === '其他') {
+                const otherExitMethod = document.getElementById('otherExitMethodInput').value;
+                if (!otherExitMethod) {
+                    showMessage('updater-message', '請輸入其他後續處理方式', 'error');
+                    return;
+                }
+                finalExitMethod = otherExitMethod;
+            }
+            
+            if (!finalExitMethod || !exitTime) {
                 showMessage('updater-message', '請填寫所有離場資訊', 'error');
                 return;
             }
@@ -3467,7 +4115,7 @@
             try {
                 showLoader();
                 const updateData = {
-                    exitMethod,
+                    exitMethod: finalExitMethod,
                     exitTime: new Date(exitTime),
                     ambulance,
                     status: 'completed',
@@ -3488,9 +4136,11 @@
                 // 清空表單
                 document.getElementById('exitMethod').value = '';
                 document.getElementById('exitTime').value = '';
-                document.getElementById('ambulance').value = '不需要';
+                document.getElementById('ambulance').value = '';
                 document.getElementById('ambulancePlate').value = '';
                 document.getElementById('ambulancePlateContainer').style.display = 'none';
+                document.getElementById('otherExitMethodContainer').style.display = 'none';
+                document.getElementById('otherExitMethodInput').value = '';
                 
                 // 2秒後重新啟動掃描器
                 setTimeout(() => {
@@ -3594,7 +4244,227 @@
             });
         }
         
-        // 載入記錄 - 修復版本 (問題1修復)
+        // 改善1：編輯記錄功能
+        async function editRecord(docId) {
+            try {
+                showLoader();
+                const doc = await db.collection('guests').doc(docId).get();
+                
+                if (doc.exists) {
+                    const data = doc.data();
+                    
+                    // 填充編輯表單
+                    document.getElementById('edit-docId').value = docId;
+                    document.getElementById('edit-cabinNumber').value = data.cabinNumber || '';
+                    document.getElementById('edit-groupNumber').value = data.groupNumber || '';
+                    document.getElementById('edit-guestName').value = data.guestName || '';
+                    document.getElementById('edit-contactNumber').value = data.contactNumber || '';
+                    document.getElementById('edit-gender').value = data.gender || '';
+                    document.getElementById('edit-ageRange').value = data.ageRange || '';
+                    document.getElementById('edit-healthStatus').value = data.healthStatus || '';
+                    
+                    // 改善3：救護車需求
+                    document.getElementById('edit-ambulance').value = data.ambulance || '';
+                    document.getElementById('edit-ambulancePlate').value = data.ambulancePlate || '';
+                    
+                    // 改善4：後續處理
+                    if (data.exitMethod) {
+                        // 檢查是否為其他後續處理方式
+                        const presetOptions = ['正常或傷勢已處理 已離開', '需要在賓客休息區休息', '已送院救治'];
+                        if (!presetOptions.includes(data.exitMethod)) {
+                            document.getElementById('edit-exitMethod').value = '其他';
+                            document.getElementById('edit-otherExitMethodContainer').style.display = 'block';
+                            document.getElementById('edit-otherExitMethodInput').value = data.exitMethod;
+                        } else {
+                            document.getElementById('edit-exitMethod').value = data.exitMethod;
+                        }
+                    }
+                    
+                    // 處理救援人員字段
+                    if (data.rescuedBy) {
+                        const presetOptions = ['消防員', '民安隊', '警察', 'NP360職員'];
+                        if (presetOptions.includes(data.rescuedBy)) {
+                            document.getElementById('edit-rescuedBy').value = data.rescuedBy;
+                        } else {
+                            document.getElementById('edit-rescuedBy').value = '其他';
+                            document.getElementById('edit-otherRescuerInput').value = data.rescuedBy;
+                            document.getElementById('edit-otherRescuerContainer').style.display = 'block';
+                        }
+                    }
+                    
+                    // 處理時間字段
+                    document.getElementById('edit-timeReachedTop').value = data.timeReachedTop || '';
+                    document.getElementById('edit-timeLanded').value = data.timeLanded || '';
+                    document.getElementById('edit-remarks').value = data.remarks || '';
+                    
+                    // 處理離場時間
+                    if (data.exitTime) {
+                        let exitTime;
+                        try {
+                            if (data.exitTime.toDate && typeof data.exitTime.toDate === 'function') {
+                                exitTime = data.exitTime.toDate();
+                            } else if (data.exitTime instanceof Date) {
+                                exitTime = data.exitTime;
+                            } else {
+                                exitTime = new Date(data.exitTime);
+                            }
+                            
+                            if (!isNaN(exitTime.getTime())) {
+                                document.getElementById('edit-exitTime').value = exitTime.toISOString().slice(0, 16);
+                            }
+                        } catch (error) {
+                            console.error('處理離場時間錯誤:', error);
+                        }
+                    } else {
+                        // 改善1：如果沒有離場時間，設置為當前時間
+                        document.getElementById('edit-exitTime').value = setCurrentDateTime();
+                    }
+                    
+                    // 設置救護車需求顯示
+                    toggleEditAmbulancePlate();
+                    
+                    // 設置其他後續處理顯示
+                    toggleEditOtherExitMethod();
+                    
+                    // 顯示編輯模態框
+                    document.getElementById('edit-record-modal').style.display = 'flex';
+                    
+                } else {
+                    showMessage('dashboard-section', '找不到記錄', 'error');
+                }
+            } catch (error) {
+                console.error('載入記錄失敗:', error);
+                showMessage('dashboard-section', '載入記錄失敗: ' + error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // 改善1：從編輯表單更新記錄
+        async function updateRecordFromEdit() {
+            const docId = document.getElementById('edit-docId').value;
+            
+            if (!docId) {
+                showMessage('edit-message', '無效的記錄ID', 'error');
+                return;
+            }
+            
+            const updateData = {
+                cabinNumber: document.getElementById('edit-cabinNumber').value,
+                groupNumber: document.getElementById('edit-groupNumber').value,
+                guestName: document.getElementById('edit-guestName').value,
+                contactNumber: document.getElementById('edit-contactNumber').value,
+                gender: document.getElementById('edit-gender').value,
+                ageRange: document.getElementById('edit-ageRange').value,
+                healthStatus: document.getElementById('edit-healthStatus').value,
+                ambulance: document.getElementById('edit-ambulance').value,
+                exitMethod: document.getElementById('edit-exitMethod').value,
+                rescuedBy: document.getElementById('edit-rescuedBy').value,
+                timeReachedTop: document.getElementById('edit-timeReachedTop').value,
+                timeLanded: document.getElementById('edit-timeLanded').value,
+                remarks: document.getElementById('edit-remarks').value,
+                updatedAt: new Date()
+            };
+            
+            // 改善4：處理其他後續處理方式
+            if (updateData.exitMethod === '其他') {
+                const otherExitMethod = document.getElementById('edit-otherExitMethodInput').value;
+                if (!otherExitMethod) {
+                    showMessage('edit-message', '請輸入其他後續處理方式', 'error');
+                    return;
+                }
+                updateData.exitMethod = otherExitMethod;
+            }
+            
+            // 處理救護車車牌
+            if (updateData.ambulance === '需要') {
+                updateData.ambulancePlate = document.getElementById('edit-ambulancePlate').value;
+                if (!updateData.ambulancePlate) {
+                    showMessage('edit-message', '請輸入救護車車牌號碼', 'error');
+                    return;
+                }
+            } else {
+                updateData.ambulancePlate = '';
+            }
+            
+            // 處理救援人員
+            if (updateData.rescuedBy === '其他') {
+                updateData.rescuedBy = document.getElementById('edit-otherRescuerInput').value;
+            }
+            
+            // 處理離場時間
+            const exitTime = document.getElementById('edit-exitTime').value;
+            if (exitTime) {
+                updateData.exitTime = new Date(exitTime);
+                updateData.status = 'completed';
+            } else {
+                updateData.exitTime = null;
+                updateData.status = 'pending';
+            }
+            
+            // 驗證必填字段
+            if (!updateData.cabinNumber || !updateData.groupNumber || !updateData.guestName || !updateData.healthStatus) {
+                showMessage('edit-message', '請填寫所有必填字段', 'error');
+                return;
+            }
+            
+            try {
+                showLoader();
+                await db.collection('guests').doc(docId).update(updateData);
+                
+                showMessage('edit-message', '記錄更新成功！', 'success');
+                
+                // 更新救援地圖
+                updateRescueMapFromFirestore();
+                
+                // 重新載入記錄
+                setTimeout(() => {
+                    closeEditModal();
+                    loadRecords();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('更新記錄失敗:', error);
+                showMessage('edit-message', '更新記錄失敗: ' + error.message, 'error');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // 改善1：關閉編輯模態框
+        function closeEditModal() {
+            document.getElementById('edit-record-modal').style.display = 'none';
+            document.getElementById('edit-message').textContent = '';
+            document.getElementById('edit-message').className = 'message';
+        }
+
+        // 改善1：編輯表單中救護車需求切換
+        function toggleEditAmbulancePlate() {
+            const ambulanceSelect = document.getElementById('edit-ambulance');
+            const plateContainer = document.getElementById('edit-ambulancePlateContainer');
+            
+            if (ambulanceSelect.value === '需要') {
+                plateContainer.style.display = 'block';
+            } else {
+                plateContainer.style.display = 'none';
+                document.getElementById('edit-ambulancePlate').value = '';
+            }
+        }
+
+        // 改善1：編輯表單中其他救援人員輸入欄位顯示
+        function toggleEditOtherRescuerInput() {
+            const rescuedBySelect = document.getElementById('edit-rescuedBy');
+            const otherRescuerContainer = document.getElementById('edit-otherRescuerContainer');
+            
+            if (rescuedBySelect.value === '其他') {
+                otherRescuerContainer.style.display = 'block';
+            } else {
+                otherRescuerContainer.style.display = 'none';
+                document.getElementById('edit-otherRescuerInput').value = '';
+            }
+        }
+        
+        // 修改載入記錄函數，添加編輯按鈕
         async function loadRecords() {
             try {
                 showLoader();
@@ -3649,6 +4519,12 @@
                             ${data.status === 'completed' ? '已完成' : '處理中'}
                         </span></td>
                         <td>${createdAt}</td>
+                        <!-- 改善1：添加編輯按鈕 -->
+                        <td>
+                            <button class="edit-btn" onclick="editRecord('${id}')">
+                                <i class="fas fa-edit"></i> 編輯
+                            </button>
+                        </td>
                     `;
                     
                     recordsList.appendChild(row);
@@ -3914,6 +4790,203 @@
             return warningDiv;
         }
         
+        // 改善3：修改救援地圖中新增組別的功能，確保表單空白
+        window.addNewGroup = function() {
+            const cabinNumber = currentCabin.fields.sequence;
+            if (!cabinNumber) {
+                alert('請先輸入車廂號碼');
+                return;
+            }
+            
+            // 重置組別詳情表單，確保所有字段為空白
+            document.getElementById('groupDetailForm').reset();
+            
+            // 設置車廂號碼
+            document.getElementById('groupDetailCabinNumber').value = cabinNumber;
+            
+            // 清除所有隱藏字段
+            document.getElementById('groupDetailDocId').value = '';
+            
+            // 改善2：確保健康狀況為空白
+            document.getElementById('groupDetailHealthStatus').value = '';
+            
+            // 改善3：確保救護車需求為空白
+            document.getElementById('groupDetailAmbulance').value = '';
+            
+            // 確保救援人員為空白
+            document.getElementById('groupDetailRescuedBy').value = '';
+            document.getElementById('otherRescuerInput').value = '';
+            document.getElementById('otherRescuerContainer').style.display = 'none';
+            
+            // 確保救護車需求為默認值
+            document.getElementById('groupAmbulancePlateContainer').style.display = 'none';
+            document.getElementById('groupDetailAmbulancePlate').value = '';
+            
+            // 改善4：確保後續處理為空白
+            document.getElementById('groupDetailExitMethod').value = '';
+            document.getElementById('groupDetailOtherExitMethodContainer').style.display = 'none';
+            document.getElementById('groupDetailOtherExitMethodInput').value = '';
+            
+            // 改善1：確保時間字段為空白
+            document.getElementById('groupDetailTimeReachedTop').value = '';
+            document.getElementById('groupDetailTimeLanded').value = '';
+            document.getElementById('groupDetailExitTime').value = setCurrentDateTime();
+            
+            // 改善5：重置聯絡方式
+            document.getElementById('groupDetailContactNumber').value = '';
+            document.getElementById('groupDetailSmsOnly').checked = false;
+            document.getElementById('groupDetailOtherContactContainer').style.display = 'none';
+            document.getElementById('groupDetailOtherContactInput').value = '';
+            
+            // 打開空的組別詳情模態框
+            document.getElementById('groupDetailModal').style.display = 'flex';
+            
+            // 自動聚焦到組別輸入框
+            setTimeout(() => {
+                const groupNumberInput = document.getElementById('groupDetailGroupNumber');
+                if (groupNumberInput) {
+                    groupNumberInput.focus();
+                }
+            }, 100);
+        };
+
+        // 改善3：修改組別詳情模態框的打開函數，確保新增時為空白
+        function openGroupDetailModal(guestData) {
+            const modal = document.getElementById('groupDetailModal');
+            const form = document.getElementById('groupDetailForm');
+            
+            if (!modal || !form) {
+                console.error('找不到組別詳情模態框或表單');
+                return;
+            }
+            
+            // 重置表單
+            form.reset();
+            
+            // 只有當有現有數據時才填充
+            if (guestData && guestData.docId) {
+                document.getElementById('groupDetailDocId').value = guestData.docId;
+            }
+            
+            if (guestData && guestData.cabinNumber) {
+                document.getElementById('groupDetailCabinNumber').value = guestData.cabinNumber;
+            }
+            
+            // 只有在有數據時才填充其他字段
+            if (guestData) {
+                const fieldMappings = {
+                    'groupNumber': 'groupDetailGroupNumber',
+                    'guestName': 'groupDetailGuestName',
+                    'contactNumber': 'groupDetailContactNumber',
+                    'gender': 'groupDetailGender',
+                    'ageRange': 'groupDetailAgeRange',
+                    'healthStatus': 'groupDetailHealthStatus',
+                    'ambulance': 'groupDetailAmbulance',
+                    'ambulancePlate': 'groupDetailAmbulancePlate',
+                    'exitMethod': 'groupDetailExitMethod',
+                    'rescuedBy': 'groupDetailRescuedBy',
+                    'timeReachedTop': 'groupDetailTimeReachedTop',
+                    'timeLanded': 'groupDetailTimeLanded',
+                    'remarks': 'groupDetailRemarks'
+                };
+                
+                for (const [dataKey, elementId] of Object.entries(fieldMappings)) {
+                    const element = document.getElementById(elementId);
+                    if (element && guestData[dataKey]) {
+                        element.value = guestData[dataKey];
+                    }
+                }
+                
+                // 使用新的時間處理函數處理離場時間
+                if (guestData.exitTime) {
+                    let exitTime;
+                    try {
+                        if (guestData.exitTime.toDate && typeof guestData.exitTime.toDate === 'function') {
+                            exitTime = guestData.exitTime.toDate();
+                        } else if (guestData.exitTime instanceof Date) {
+                            exitTime = guestData.exitTime;
+                        } else {
+                            exitTime = new Date(guestData.exitTime);
+                        }
+                        
+                        if (!isNaN(exitTime.getTime())) {
+                            document.getElementById('groupDetailExitTime').value = exitTime.toISOString().slice(0, 16);
+                        }
+                    } catch (error) {
+                        console.error('處理離場時間錯誤:', error);
+                    }
+                } else {
+                    // 改善1：如果沒有離場時間，設置為當前時間
+                    document.getElementById('groupDetailExitTime').value = setCurrentDateTime();
+                }
+                
+                // 處理救援人員字段
+                if (guestData.rescuedBy) {
+                    const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
+                    const otherRescuerInput = document.getElementById('otherRescuerInput');
+                    const otherRescuerContainer = document.getElementById('otherRescuerContainer');
+                    
+                    const presetOptions = ['消防員', '民安隊', '警察', 'NP360職員'];
+                    if (presetOptions.includes(guestData.rescuedBy)) {
+                        rescuedBySelect.value = guestData.rescuedBy;
+                        otherRescuerContainer.style.display = 'none';
+                    } else {
+                        rescuedBySelect.value = '其他';
+                        otherRescuerInput.value = guestData.rescuedBy;
+                        otherRescuerContainer.style.display = 'block';
+                    }
+                }
+                
+                // 改善4：處理後續處理字段
+                if (guestData.exitMethod) {
+                    const presetOptions = ['正常或傷勢已處理 已離開', '需要在賓客休息區休息', '已送院救治'];
+                    if (!presetOptions.includes(guestData.exitMethod)) {
+                        document.getElementById('groupDetailExitMethod').value = '其他';
+                        document.getElementById('groupDetailOtherExitMethodContainer').style.display = 'block';
+                        document.getElementById('groupDetailOtherExitMethodInput').value = guestData.exitMethod;
+                    } else {
+                        document.getElementById('groupDetailExitMethod').value = guestData.exitMethod;
+                    }
+                }
+                
+                // 更新組別狀態徽章
+                updateGroupStatusBadge(guestData);
+                
+                // 生成QR碼
+                generateGroupQRCode(guestData);
+            } else {
+                // 新增組別時，確保健康狀況為空白
+                document.getElementById('groupDetailHealthStatus').value = '';
+                
+                // 改善3：確保救護車需求為空白
+                document.getElementById('groupDetailAmbulance').value = '';
+                
+                // 改善1：設置離場時間為當前時間
+                document.getElementById('groupDetailExitTime').value = setCurrentDateTime();
+                
+                // 清除QR碼
+                const qrcodeDiv = document.getElementById('group-qrcode');
+                if (qrcodeDiv) {
+                    qrcodeDiv.innerHTML = '';
+                }
+            }
+            
+            // 顯示模態框
+            modal.style.display = 'flex';
+            
+            // 設置救護車需求顯示
+            toggleGroupAmbulancePlate();
+            
+            // 設置救援人員顯示
+            toggleOtherRescuerInput();
+            
+            // 設置其他後續處理顯示
+            toggleGroupDetailOtherExitMethod();
+            
+            // 立即檢查一次組別重複
+            setTimeout(checkGroupNumberRealTime, 100);
+        }
+        
         // 組別詳情表單提交 - 問題2修復版本
         document.getElementById('groupDetailForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -3944,11 +5017,43 @@
                     guestData.rescuedBy = '';
                 }
                 
+                // 改善4：處理後續處理字段
+                const exitMethodSelect = document.getElementById('groupDetailExitMethod');
+                const otherExitMethodInput = document.getElementById('groupDetailOtherExitMethodInput');
+                
+                if (exitMethodSelect.value === '其他' && otherExitMethodInput.value) {
+                    // 如果選擇"其他"且有輸入值，使用輸入的值
+                    guestData.exitMethod = otherExitMethodInput.value;
+                } else if (exitMethodSelect.value && exitMethodSelect.value !== '其他') {
+                    // 如果選擇了預設選項，使用選項的值
+                    guestData.exitMethod = exitMethodSelect.value;
+                } else {
+                    // 否則清空後續處理字段
+                    guestData.exitMethod = '';
+                }
+                
+                // 改善5：處理聯絡方式
+                const contactInput = document.getElementById('groupDetailContactNumber');
+                const otherContactInput = document.getElementById('groupDetailOtherContactInput');
+                
+                if (otherContactInput.value) {
+                    // 如果其他聯絡方式有值，使用其他聯絡方式
+                    guestData.contactNumber = otherContactInput.value;
+                } else if (contactInput.value) {
+                    // 否則使用主要聯絡方式
+                    guestData.contactNumber = contactInput.value;
+                } else {
+                    // 否則清空聯絡方式
+                    guestData.contactNumber = '';
+                }
+                
                 // 檢查必填字段
-                if (!guestData.cabinNumber || !guestData.groupNumber || !guestData.healthStatus) {
-                    alert('請填寫所有必填字段（車廂號碼、組別、健康狀況）');
+                if (!guestData.cabinNumber || !guestData.groupNumber) {
+                    alert('請填寫所有必填字段（車廂號碼、組別）');
                     return;
                 }
+                
+                // 改善2：健康狀況改為選填，不再檢查
                 
                 // 檢查救護車需求
                 if (guestData.ambulance === '需要' && !guestData.ambulancePlate) {
@@ -4031,117 +5136,6 @@
             }
         });
         
-        // 在打開組別詳情模態框時，添加組別重複檢查的視覺提示
-        function openGroupDetailModal(guestData) {
-            const modal = document.getElementById('groupDetailModal');
-            const form = document.getElementById('groupDetailForm');
-            
-            if (!modal || !form) {
-                console.error('找不到組別詳情模態框或表單');
-                return;
-            }
-            
-            // 重置表單
-            form.reset();
-            
-            // 填充資料
-            if (guestData.docId) {
-                document.getElementById('groupDetailDocId').value = guestData.docId;
-            }
-            
-            if (guestData.cabinNumber) {
-                document.getElementById('groupDetailCabinNumber').value = guestData.cabinNumber;
-            }
-            
-            // 填充表單字段
-            const fieldMappings = {
-                'groupNumber': 'groupDetailGroupNumber',
-                'guestName': 'groupDetailGuestName',
-                'contactNumber': 'groupDetailContactNumber',
-                'gender': 'groupDetailGender',
-                'ageRange': 'groupDetailAgeRange',
-                'healthStatus': 'groupDetailHealthStatus',
-                'ambulance': 'groupDetailAmbulance',
-                'ambulancePlate': 'groupDetailAmbulancePlate',
-                'exitMethod': 'groupDetailExitMethod',
-                'rescuedBy': 'groupDetailRescuedBy',
-                'timeReachedTop': 'groupDetailTimeReachedTop',
-                'timeLanded': 'groupDetailTimeLanded',
-                'remarks': 'groupDetailRemarks'
-            };
-            
-            for (const [dataKey, elementId] of Object.entries(fieldMappings)) {
-                const element = document.getElementById(elementId);
-                if (element && guestData[dataKey]) {
-                    element.value = guestData[dataKey];
-                }
-            }
-            
-            // 使用新的時間處理函數處理離場時間
-            if (guestData.exitTime) {
-                let exitTime;
-                try {
-                    if (guestData.exitTime.toDate && typeof guestData.exitTime.toDate === 'function') {
-                        exitTime = guestData.exitTime.toDate();
-                    } else if (guestData.exitTime instanceof Date) {
-                        exitTime = guestData.exitTime;
-                    } else {
-                        exitTime = new Date(guestData.exitTime);
-                    }
-                    
-                    if (!isNaN(exitTime.getTime())) {
-                        document.getElementById('groupDetailExitTime').value = exitTime.toISOString().slice(0, 16);
-                    }
-                } catch (error) {
-                    console.error('處理離場時間錯誤:', error);
-                }
-            }
-            
-            // 處理救援人員字段
-            if (guestData.rescuedBy) {
-                const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
-                const otherRescuerInput = document.getElementById('otherRescuerInput');
-                const otherRescuerContainer = document.getElementById('otherRescuerContainer');
-                
-                const presetOptions = ['消防員', '民安隊', '警察', 'NP360職員'];
-                if (presetOptions.includes(guestData.rescuedBy)) {
-                    rescuedBySelect.value = guestData.rescuedBy;
-                    otherRescuerContainer.style.display = 'none';
-                } else {
-                    rescuedBySelect.value = '其他';
-                    otherRescuerInput.value = guestData.rescuedBy;
-                    otherRescuerContainer.style.display = 'block';
-                }
-            }
-            
-            // 更新組別狀態徽章
-            updateGroupStatusBadge(guestData);
-            
-            // 新增：添加組別輸入框的實時重複檢查
-            const groupNumberInput = document.getElementById('groupDetailGroupNumber');
-            if (groupNumberInput) {
-                // 移除之前的事件監聽器
-                groupNumberInput.removeEventListener('change', checkGroupNumberRealTime);
-                // 添加新的事件監聽器
-                groupNumberInput.addEventListener('change', checkGroupNumberRealTime);
-            }
-            
-            // 顯示模態框
-            modal.style.display = 'flex';
-            
-            // 生成QR碼
-            generateGroupQRCode(guestData);
-            
-            // 設置救護車需求顯示
-            toggleGroupAmbulancePlate();
-            
-            // 設置救援人員顯示
-            toggleOtherRescuerInput();
-            
-            // 立即檢查一次
-            setTimeout(checkGroupNumberRealTime, 100);
-        }
-        
         // 更新組別狀態徽章
         function updateGroupStatusBadge(guestData) {
             const badge = document.getElementById('group-status-badge');
@@ -4173,42 +5167,6 @@
             }
         }
         
-        // 生成組別QR碼
-        function generateGroupQRCode(guestData) {
-            const qrcodeDiv = document.getElementById('group-qrcode');
-            if (!qrcodeDiv) return;
-            
-            qrcodeDiv.innerHTML = '';
-            
-            const data = JSON.stringify({ 
-                docId: guestData.docId,
-                type: 'guestRecord'
-            });
-            
-            // 根據健康狀況獲取顏色
-            const qrColor = getQRCodeColor(guestData.healthStatus);
-            
-            const groupQRCode = new QRCodeStyling({
-                width: 150,
-                height: 150,
-                data: data,
-                image: "",
-                dotsOptions: {
-                    color: qrColor,
-                    type: "rounded"
-                },
-                backgroundOptions: {
-                    color: "#ffffff",
-                },
-                imageOptions: {
-                    crossOrigin: "anonymous",
-                    margin: 5
-                }
-            });
-            
-            groupQRCode.append(qrcodeDiv);
-        }
-        
         // 關閉組別詳情模態框
         window.closeGroupDetailModal = function() {
             const modal = document.getElementById('groupDetailModal');
@@ -4222,27 +5180,33 @@
             }
         };
         
-        // 在新增組別時，自動設置車廂號碼
-        window.addNewGroup = function() {
-            const cabinNumber = currentCabin.fields.sequence;
-            if (!cabinNumber) {
-                alert('請先輸入車廂號碼');
-                return;
-            }
-            
-            // 打開空的組別詳情模態框
-            openGroupDetailModal({
-                cabinNumber: cabinNumber
-            });
-            
-            // 自動聚焦到組別輸入框
-            setTimeout(() => {
-                const groupNumberInput = document.getElementById('groupDetailGroupNumber');
-                if (groupNumberInput) {
-                    groupNumberInput.focus();
+        // 加載組別詳情
+        async function loadGroupDetail(docId) {
+            try {
+                showLoader();
+                console.log('正在載入組別詳情:', docId);
+                
+                const doc = await db.collection('guests').doc(docId).get();
+                
+                if (doc.exists) {
+                    const guestData = doc.data();
+                    guestData.docId = docId;
+                    console.log('組別詳情載入成功:', guestData);
+                    openGroupDetailModal(guestData);
+                } else {
+                    alert('找不到組別記錄，可能已被刪除');
+                    // 重新載入組別列表
+                    if (currentCabin) {
+                        await loadGroupList(currentCabin);
+                    }
                 }
-            }, 100);
-        };
+            } catch (error) {
+                console.error('載入組別詳情失敗:', error);
+                alert('載入組別詳情失敗: ' + error.message);
+            } finally {
+                hideLoader();
+            }
+        }
         
         // 初始化救援地圖
         function initRescueMap() {
@@ -4619,34 +5583,6 @@
                 loadGroupDetail(docId);
             };
             
-            // 加載組別詳情
-            async function loadGroupDetail(docId) {
-                try {
-                    showLoader();
-                    console.log('正在載入組別詳情:', docId);
-                    
-                    const doc = await db.collection('guests').doc(docId).get();
-                    
-                    if (doc.exists) {
-                        const guestData = doc.data();
-                        guestData.docId = docId;
-                        console.log('組別詳情載入成功:', guestData);
-                        openGroupDetailModal(guestData);
-                    } else {
-                        alert('找不到組別記錄，可能已被刪除');
-                        // 重新載入組別列表
-                        if (currentCabin) {
-                            await loadGroupList(currentCabin);
-                        }
-                    }
-                } catch (error) {
-                    console.error('載入組別詳情失敗:', error);
-                    alert('載入組別詳情失敗: ' + error.message);
-                } finally {
-                    hideLoader();
-                }
-            }
-            
             // 加載組別狀態
             async function loadGroupStatus(cabin) {
                 try {
@@ -4773,38 +5709,6 @@
                 } finally {
                     hideLoader();
                 }
-            }
-            
-            // 生成地圖QR碼
-            function generateMapQRCode() {
-                const qrcodeDiv = document.getElementById('map-qrcode');
-                qrcodeDiv.innerHTML = '';
-                
-                const data = JSON.stringify({ 
-                    cabinId: currentCabin.id,
-                    sequence: currentCabin.fields.sequence,
-                    type: 'cabinInfo'
-                });
-                
-                const mapQRCode = new QRCodeStyling({
-                    width: 150,
-                    height: 150,
-                    data: data,
-                    image: "",
-                    dotsOptions: {
-                        color: "#4267B2",
-                        type: "rounded"
-                    },
-                    backgroundOptions: {
-                        color: "#ffffff",
-                    },
-                    imageOptions: {
-                        crossOrigin: "anonymous",
-                        margin: 5
-                    }
-                });
-                
-                mapQRCode.append(qrcodeDiv);
             }
             
             window.closeModal = function() {
