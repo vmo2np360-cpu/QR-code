@@ -287,28 +287,98 @@
             margin-top: 20px;
         }
         
-        .record-table {
+        /* 監控面板表格容器樣式優化 */
+        #records-table {
+            overflow-x: auto;
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
             margin-top: 30px;
             border-radius: 12px;
-            overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            max-height: 70vh; /* 限制最大高度 */
+            position: relative;
         }
-        
-        .record-table th {
+
+        /* 水平滾動條樣式優化 */
+        #records-table::-webkit-scrollbar {
+            height: 12px;
+        }
+
+        #records-table::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 6px;
+        }
+
+        #records-table::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 6px;
+        }
+
+        #records-table::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* 表格樣式優化 */
+        .record-table {
+            width: auto;
+            min-width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        /* 固定第一列（編號列） */
+        .record-table th:nth-child(1),
+        .record-table td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 10;
             background: var(--primary);
             color: white;
-            text-align: left;
-            padding: 16px;
-            font-weight: 600;
+            width: 60px;
+            min-width: 60px;
+            max-width: 60px;
         }
-        
+
+        /* 修復斑馬紋和懸停效果 */
+        .record-table tr:nth-child(even) td:nth-child(1) {
+            background: #e3f2fd !important;
+            color: var(--primary);
+        }
+
+        .record-table tr:hover td:nth-child(1) {
+            background: #bbdefb !important;
+        }
+
+        /* 固定表頭 */
+        .record-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: var(--secondary);
+            color: white;
+        }
+
+        /* 移動端優化 */
+        @media (max-width: 768px) {
+            #records-table {
+                max-height: 60vh;
+            }
+            
+            .record-table th:nth-child(1),
+            .record-table td:nth-child(1) {
+                width: 50px;
+                min-width: 50px;
+                max-width: 50px;
+            }
+        }
+
         .record-table td {
-            padding: 16px;
+            padding: 12px;
             border-bottom: 1px solid #eee;
             background: white;
+            word-wrap: break-word; /* 文字換行 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; /* 默認不換行，超出顯示省略號 */
         }
         
         .record-table tr:nth-child(even) td {
@@ -318,6 +388,24 @@
         .record-table tr:hover td {
             background: #f1f7ff;
         }
+        
+        /* 設置固定列寬 */
+        .record-table th:nth-child(1), .record-table td:nth-child(1) { width: 60px; } /* 編號 */
+        .record-table th:nth-child(2), .record-table td:nth-child(2) { width: 80px; } /* 車廂號碼 */
+        .record-table th:nth-child(3), .record-table td:nth-child(3) { width: 100px; } /* 賓客姓名 */
+        .record-table th:nth-child(4), .record-table td:nth-child(4) { width: 120px; } /* 聯絡方式 */
+        .record-table th:nth-child(5), .record-table td:nth-child(5) { width: 60px; } /* 性別 */
+        .record-table th:nth-child(6), .record-table td:nth-child(6) { width: 80px; } /* 年齡 */
+        .record-table th:nth-child(7), .record-table td:nth-child(7) { width: 80px; } /* 組別 */
+        .record-table th:nth-child(8), .record-table td:nth-child(8) { width: 150px; } /* 健康狀況 */
+        .record-table th:nth-child(9), .record-table td:nth-child(9) { width: 100px; } /* 救護車需求 */
+        .record-table th:nth-child(10), .record-table td:nth-child(10) { width: 150px; } /* 後續處理 */
+        .record-table th:nth-child(11), .record-table td:nth-child(11) { width: 100px; } /* 結束救援時間 */
+        .record-table th:nth-child(12), .record-table td:nth-child(12) { width: 100px; } /* 開始救援時間 */
+        .record-table th:nth-child(13), .record-table td:nth-child(13) { width: 120px; } /* 備註 */
+        .record-table th:nth-child(14), .record-table td:nth-child(14) { width: 80px; } /* 狀態 */
+        .record-table th:nth-child(15), .record-table td:nth-child(15) { width: 140px; } /* 建立時間 */
+        .record-table th:nth-child(16), .record-table td:nth-child(16) { width: 80px; } /* 操作 */
         
         .status-badge {
             display: inline-block;
@@ -802,11 +890,16 @@
         }
         
         .seq-label {
-            font-size: 12px;
+            font-size: 20px;
             font-weight: bold;
             text-anchor: middle;
             dominant-baseline: middle;
         }
+        @media (max-width: 768px) {
+    .seq-label {
+        font-size: 14px; /* 移動端也適當增大 */
+    }
+}
         
         .cabin-highlight polygon {
             stroke: gold;
@@ -874,23 +967,60 @@
             border-color: var(--primary);
         }
         
-        .contact-sms-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
+      /* 聯絡方式短信選項樣式改進 */
+.contact-sms-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.contact-sms-option:hover {
+    background: #e9ecef;
+}
+
+.contact-sms-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.contact-sms-option label {
+    margin: 0;
+    font-weight: normal;
+    font-size: 0.9rem;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* 移動端優化 */
+@media (max-width: 768px) {
+    .contact-sms-option {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+    }
+    
+    .contact-sms-option input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+}
         
         .contact-other-input {
-            margin-top: 8px;
             display: none;
+            margin-top: 8px;
         }
         
-        /* 救護車車牌輸入框 */
-        .ambulance-plate {
+        /* 救護車車牌和醫院輸入框 */
+        .ambulance-fields {
             display: none;
             margin-top: 8px;
         }
@@ -1216,15 +1346,42 @@
                 border-radius: 25px;
             }
             
-            /* 優化表格顯示 */
+            /* 監控面板表格移動端優化 */
             .record-table {
-                font-size: 14px;
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+                table-layout: auto;
             }
             
-            .record-table th, 
-            .record-table td {
-                padding: 10px 8px;
-                min-width: 100px;
+           .record-table th,
+           .record-table td {
+                min-width: 80px; /* 設置最小寬度而不是固定寬度 */
+                max-width: 200px; /* 設置最大寬度 */
+                padding: 12px 8px;
+                border-bottom: 1px solid #eee;
+                background: white;
+                word-wrap: break-word;
+                white-space: normal; /* 允許換行 */
+                line-height: 1.4;
+            }
+            
+            .record-table th:nth-child(13), /* 備註 */
+            .record-table td:nth-child(13) {
+                min-width: 150px;
+                max-width: 250px;
+            }
+
+            .record-table th:nth-child(10), /* 後續處理 */
+            .record-table td:nth-child(10) {
+                min-width: 120px;
+                max-width: 180px;
+            }
+
+            .record-table th:nth-child(8), /* 健康狀況 */
+            .record-table td:nth-child(8) {
+                min-width: 120px;
+                max-width: 180px;
             }
             
             /* 優化統計卡片 */
@@ -1347,18 +1504,6 @@
             .nav-btn {
                 width: 100%;
                 justify-content: center;
-            }
-            
-            .record-table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-            
-            .record-table th, 
-            .record-table td {
-                min-width: 120px;
-                padding: 8px;
             }
             
             .stats-container {
@@ -1791,8 +1936,6 @@
                     <!-- 聯絡方式快速選擇 -->
                     <div class="contact-options">
                         <div class="contact-btn" onclick="setContactType('未能提供')">未能提供</div>
-                        <div class="contact-btn" onclick="setContactType('無電話')">無電話</div>
-                        <div class="contact-btn" onclick="setContactType('不願提供')">不願提供</div>
                         <div class="contact-btn" onclick="toggleOtherContactInput()">其他</div>
                     </div>
                     
@@ -1817,7 +1960,7 @@
                     <label for="ageRange"><i class="fas fa-birthday-cake"></i> 年齡</label>
                     <select id="ageRange">
                         <option value="">請選擇年齡間距</option>
-                        <option value="">未能提供</option>
+                        <option value="未能提供">未能提供</option>
                         <option value="0-12">0-12歲</option>
                         <option value="13-17">13-17歲</option>
                         <option value="18-25">18-25歲</option>
@@ -1896,6 +2039,12 @@
                     <p id="detail-groupNumber" style="padding: 10px; background: #f5f5f5; border-radius: 8px;"></p>
                 </div>
                 
+                <!-- 新增：顯示被救者姓名 -->
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> 被救者姓名</label>
+                    <p id="detail-guestName" style="padding: 10px; background: #f5f5f5; border-radius: 8px;"></p>
+                </div>
+                
                 <div class="form-group">
                     <label><i class="fas fa-heartbeat"></i> 健康狀況</label>
                     <p id="detail-healthStatus" style="padding: 10px; background: #f5f5f5; border-radius: 8px;"></p>
@@ -1904,14 +2053,21 @@
                 <!-- 改善3：救護車需求移除預設答案 -->
                 <div class="form-group">
                     <label for="ambulance"><i class="fas fa-ambulance"></i> 救護車需求</label>
-                    <select id="ambulance" onchange="toggleAmbulancePlate()">
+                    <select id="ambulance" onchange="toggleAmbulanceFields()">
                         <option value="">請選擇</option>
                         <option value="不需要">不需要</option>
                         <option value="需要">需要</option>
                     </select>
-                    <div id="ambulancePlateContainer" class="ambulance-plate">
-                        <label for="ambulancePlate" style="margin-top: 10px;">救護車車牌號碼</label>
-                        <input type="text" id="ambulancePlate" placeholder="請輸入救護車車牌號碼">
+                    <div id="ambulanceFields" class="ambulance-fields">
+                        <div class="ambulance-plate">
+                            <label for="ambulancePlate" style="margin-top: 10px;">救護車車牌號碼</label>
+                            <input type="text" id="ambulancePlate" placeholder="請輸入救護車車牌號碼">
+                        </div>
+                        <!-- 新增：醫院名稱輸入框 -->
+                        <div class="ambulance-hospital">
+                            <label for="hospital" style="margin-top: 10px;">醫院名稱</label>
+                            <input type="text" id="hospital" placeholder="請輸入醫院名稱">
+                        </div>
                     </div>
                 </div>
                 
@@ -1919,10 +2075,10 @@
                 <div class="form-group">
                     <label for="exitMethod"><i class="fas fa-walking"></i> 後續處理</label>
                     <select id="exitMethod" onchange="toggleOtherExitMethod()">
-                        <option value="">請選擇後續處理</option>
-                        <option value="正常或傷勢已處理 已離開">正常或傷勢已處理 自行離開</option>
-                        <option value="需要在賓客休息區休息">需要在賓客休息區休息</option>
-                        <option value="已送院救治">已送院救治</option>
+                       <option value="">請選擇後續處理</option>
+                      <option value="正常或傷勢已處理 自行離開">正常或傷勢已處理 自行離開</option>
+                      <option value="現正在救援集合點休息中">現正在救援集合點休息中</option>
+                      <option value="已由救護車送往醫院">已由救護車送往醫院</option>
                         <option value="其他">其他</option>
                     </select>
                     <div id="otherExitMethodContainer" class="other-exit-method">
@@ -1931,7 +2087,7 @@
                     </div>
                 </div>
                 
-                <!-- 改善1：離場時間預設為實時 -->
+                <!-- 改善1：離場時間無預設值 -->
                 <div class="form-group">
                     <label for="exitTime"><i class="fas fa-clock"></i> 離場時間</label>
                     <input type="datetime-local" id="exitTime">
@@ -1945,7 +2101,7 @@
         
         <!-- 後台監控界面 -->
         <div id="dashboard-section" class="section">
-            <h2><i class="fas fa-chart-line"></i> 賓客資料監控面板</h2>
+            <h2><i class="fas fa-chart-line"></i> 救援資料紀錄</h2>
             
             <div id="login-form" class="auth-form">
                 <h3 class="form-title">管理員登入</h3>
@@ -2014,21 +2170,21 @@
                 </div>
                 
                 <!-- 篩選功能 -->
-                <h3><i class="fas fa-filter"></i> 數據篩選</h3>
+                <h3><i class="fas fa-filter"></i> 資料篩選</h3>
                 <div class="filter-container">
                     <div class="filter-item">
-                        <label for="filter-exitMethod">後續處理</label>
+                        <label for="filter-exitMethod">被救者後續情況</label>
                         <select id="filter-exitMethod" onchange="filterRecords()">
                         <option value="">所有狀態</option>
-                        <option value="正常或傷勢已處理 已離開">正常或傷勢已處理 自行離開</option>
-                        <option value="需要在賓客休息區休息">需要在賓客休息區休息</option>
-                        <option value="已送院救治">已送院救治</option>
+                        <option value="正常或傷勢已處理 自行離開">正常或傷勢已處理 自行離開</option>
+                        <option value="現正在救援集合點休息中">現正在救援集合點休息中</option>
+                        <option value="已由救護車送往醫院">已由救護車送往醫院</option>
                         <option value="其他">其他</option>
                         </select>
                     </div>
                     
                     <div class="filter-item">
-                        <label for="filter-health">健康狀況</label>
+                        <label for="filter-health">被救時健康狀況</label>
                         <select id="filter-health" onchange="filterRecords()">
                             <option value="">所有狀態</option>
                             <option value="綠色(第三優先)">綠色_正常或傷勢較輕可以自由走動_(第三優先)</option>
@@ -2040,7 +2196,7 @@
                     </div>
                     
                     <div class="filter-item">
-                        <label for="filter-status">記錄狀態</label>
+                        <label for="filter-status">救援狀況</label>
                         <select id="filter-status" onchange="filterRecords()">
                             <option value="">所有狀態</option>
                             <option value="completed">已完成</option>
@@ -2049,9 +2205,10 @@
                     </div>
                     
                     <div class="filter-item">
-                        <label for="filter-age">年齡間距</label>
+                        <label for="filter-age">年齡</label>
                         <select id="filter-age" onchange="filterRecords()">
                             <option value="">所有年齡</option>
+                             <option value="未能提供">未能提供</option>
                             <option value="0-12">0-12歲</option>
                             <option value="13-17">13-17歲</option>
                             <option value="18-25">18-25歲</option>
@@ -2086,17 +2243,19 @@
                     <table class="record-table">
                         <thead>
                             <tr>
+                                <th>編號</th>
                                 <th>車廂號碼</th>
-                                <th>賓客姓名</th>
+                                <th>被救者姓名</th>
                                 <th>聯絡方式</th>
                                 <th>性別</th>
-                                <th>年齡間距</th>
+                                <th>年齡</th>
                                 <th>組別</th>
                                 <th>健康狀況</th>
                                 <th>救護車需求</th>
-                                <th>救護車車牌</th>
                                 <th>後續處理</th>
-                                <th>離場時間</th>
+                                <th>開始救援時間</th>
+                                <th>結束救援時間</th>
+                                <th>備註</th>
                                 <th>狀態</th>
                                 <th>建立時間</th>
                                 <th>操作</th>
@@ -2186,7 +2345,7 @@
                     <button onclick="applySequences()">套用</button>
                     <input type="text" id="searchBox" placeholder="搜尋車廂…">
                     <button onclick="searchCabin()">搜尋</button>
-                    <button onclick="clearAllData()" style="color:red;">清除所有</button>
+                    <button onclick="clearAllData()" style="color:rgb(253, 228, 0);">清除所有</button>
                     <button id="exportBtn">匯出 CSV</button>
                     <button id="moveToggleBtn">啟用移動</button>
                     <div>
@@ -2229,19 +2388,19 @@
                     </g>
                     <!-- 圖例 -->
                     <g id="legend" transform="translate(1600,460)">
-                        <rect x="0" y="0" width="320" height="160" fill="white" stroke="#333"/>
-                        <text x="160" y="30" font-size="20" font-weight="bold" text-anchor="middle">車廂狀態</text>
+                        <rect x="0" y="0" width="320" height="200" fill="white" stroke="#333"/>
+                        <text x="160" y="40" font-size="40" font-weight="bold" text-anchor="middle">車廂狀態</text>
                         <g transform="translate(25,60)">
                             <rect width="26" height="26" fill="red" stroke="#333"/>
-                            <text x="40" y="19" font-size="16">等待</text>
+                            <text x="40" y="19" font-size="30">等待</text>
                         </g>
                         <g transform="translate(25,95)">
                             <rect width="26" height="26" fill="yellow" stroke="#333"/>
-                            <text x="40" y="19" font-size="16">救援中</text>
+                            <text x="40" y="19" font-size="30">救援中</text>
                         </g>
                         <g transform="translate(25,130)">
                             <rect width="26" height="26" fill="lime" stroke="#333"/>
-                            <text x="40" y="19" font-size="16">已著陸</text>
+                            <text x="40" y="19" font-size="30">已著陸</text>
                         </g>
                     </g>
                 </svg>
@@ -2267,9 +2426,9 @@
                             <!-- 移除救援人員字段 -->
                             
                             <!-- 修改時間字段標籤 -->
-                            <label>整個車廂開始救援時間: <input type="time" name="timeReachedTop" id="timeReachedTop"></label>
+                            <label>車廂開始救援時間 (第一位救援人員開始救援): <input type="time" name="timeReachedTop" id="timeReachedTop"></label>
                             
-                            <label>整個車廂完成救援時間: <input type="time" name="timeLanded" id="timeLanded"></label>
+                            <label>車廂完全救援時間 (全部乘客離開): <input type="time" name="timeLanded" id="timeLanded"></label>
                             
                             <!-- 组别状态显示 -->
                             <div class="group-status" id="groupStatusContainer" style="display: none;">
@@ -2304,7 +2463,7 @@
                             <input type="hidden" id="groupDetailCabinNumber" name="cabinNumber">
                             
                             <label>組別: 
-                                <select id="groupDetailGroupNumber" name="groupNumber" required>
+                                <select id="groupDetailGroupNumber" name="groupNumber" required onchange="checkGroupNumberRealTime()">
                                     <option value="">請選擇組別</option>
                                     <option value="1">第1組</option>
                                     <option value="2">第2組</option>
@@ -2326,7 +2485,7 @@
                                 </select>
                             </label>
                             
-                            <label>賓客姓名: <input id="groupDetailGuestName" name="guestName" placeholder="請輸入賓客全名"></label>
+                            <label>被救者姓名: <input id="groupDetailGuestName" name="guestName" placeholder="請輸入賓客全名"></label>
                             
                             <!-- 改善5：組別詳情中的聯絡方式 -->
                             <div class="form-group">
@@ -2342,8 +2501,6 @@
                                 <!-- 聯絡方式快速選擇 -->
                                 <div class="contact-options">
                                     <div class="contact-btn" onclick="setGroupDetailContactType('未能提供')">未能提供</div>
-                                    <div class="contact-btn" onclick="setGroupDetailContactType('無電話')">無電話</div>
-                                    <div class="contact-btn" onclick="setGroupDetailContactType('不願提供')">不願提供</div>
                                     <div class="contact-btn" onclick="toggleGroupDetailOtherContactInput()">其他</div>
                                 </div>
                                 
@@ -2364,10 +2521,10 @@
                                 </select>
                             </label>
                             
-                            <label>年齡間距: 
+                            <label>年齡: 
                                 <select id="groupDetailAgeRange" name="ageRange">
                                     <option value="">請選擇年齡間距</option>
-                                    <option value="">未能提供</option>
+                                    <option value="未能提供">未能提供</option>
                                     <option value="0-12">0-12歲</option>
                                     <option value="13-17">13-17歲</option>
                                     <option value="18-25">18-25歲</option>
@@ -2393,25 +2550,32 @@
                             
                             <!-- 改善3：救護車需求移除預設答案 -->
                             <label>救護車需求: 
-                                <select id="groupDetailAmbulance" name="ambulance" onchange="toggleGroupAmbulancePlate()">
+                                <select id="groupDetailAmbulance" name="ambulance" onchange="toggleGroupAmbulanceFields()">
                                     <option value="">請選擇</option>
                                     <option value="不需要">不需要</option>
                                     <option value="需要">需要</option>
                                 </select>
                             </label>
                             
-                            <div id="groupAmbulancePlateContainer" class="ambulance-plate">
-                                <label for="groupDetailAmbulancePlate" style="margin-top: 10px;">救護車車牌號碼</label>
-                                <input type="text" id="groupDetailAmbulancePlate" name="ambulancePlate" placeholder="請輸入救護車車牌號碼">
+                            <div id="groupAmbulanceFields" class="ambulance-fields">
+                                <div class="ambulance-plate">
+                                    <label for="groupDetailAmbulancePlate" style="margin-top: 10px;">救護車車牌號碼</label>
+                                    <input type="text" id="groupDetailAmbulancePlate" name="ambulancePlate" placeholder="請輸入救護車車牌號碼">
+                                </div>
+                                <!-- 新增：醫院名稱輸入框 -->
+                                <div class="ambulance-hospital">
+                                    <label for="groupDetailHospital" style="margin-top: 10px;">醫院名稱</label>
+                                    <input type="text" id="groupDetailHospital" name="hospital" placeholder="請輸入醫院名稱">
+                                </div>
                             </div>
                             
                             <!-- 改善4：後續處理選擇"其他"時添加輸入框 -->
                             <label>後續處理: 
                                 <select id="groupDetailExitMethod" name="exitMethod" onchange="toggleGroupDetailOtherExitMethod()">
                                     <option value="">請選擇後續處理</option>
-                                    <option value="正常或傷勢已處理 已離開">正常或傷勢已處理 自行離開</option>
-                                    <option value="需要在賓客休息區休息">需要在賓客休息區休息</option>
-                                    <option value="已送院救治">已送院救治</option>
+                                    <option value="正常或傷勢已處理 自行離開">正常或傷勢已處理 自行離開</option>
+                                    <option value="現正在救援集合點休息中">現正在救援集合點休息中</option>
+                                    <option value="已由救護車送往醫院">已由救護車送往醫院</option>
                                     <option value="其他">其他</option>
                                 </select>
                                 <div id="groupDetailOtherExitMethodContainer" class="other-exit-method">
@@ -2420,20 +2584,20 @@
                                 </div>
                             </label>
                             
-                            <!-- 改善1：離場時間預設為實時 -->
+                            <!-- 改善1：離場時間無預設值 -->
                             <label>離場時間: <input type="datetime-local" id="groupDetailExitTime" name="exitTime"></label>
                             
                             <!-- 修改救援人員字段為選項 -->
                             <label>救援人員: 
-                                <select id="groupDetailRescuedBy" name="rescuedBy" onchange="toggleOtherRescuerInput()">
-                                    <option value="">請選擇救援人員類別</option>
-                                    <option value="消防員">消防員</option>
-                                    <option value="民安隊">民安隊</option>
-                                    <option value="警察">警察</option>
-                                    <option value="NP360職員">NP360職員</option>
-                                    <option value="其他">其他</option>
-                                </select>
-                            </label>
+    <select id="groupDetailRescuedBy" name="rescuedBy" onchange="toggleOtherRescuerInput()">
+        <option value="">請選擇救援人員類別</option>
+        <option value="消防員">消防員</option>
+        <option value="民安隊">民安隊</option>
+        <option value="警察">警察</option>
+        <option value="NP360職員">NP360職員</option>
+        <option value="其他">其他</option>
+    </select>
+</label>
                             
                             <!-- 其他救援人員輸入欄位 -->
                             <div id="otherRescuerContainer" style="display: none; margin-top: 8px;">
@@ -2508,7 +2672,7 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="edit-guestName"><i class="fas fa-user"></i> 賓客姓名</label>
+                    <label for="edit-guestName"><i class="fas fa-user"></i> 被救者姓名</label>
                     <input type="text" id="edit-guestName" placeholder="請輸入賓客全名" required>
                 </div>
                 
@@ -2526,8 +2690,6 @@
                     <!-- 聯絡方式快速選擇 -->
                     <div class="contact-options">
                         <div class="contact-btn" onclick="setEditContactType('未能提供')">未能提供</div>
-                        <div class="contact-btn" onclick="setEditContactType('無電話')">無電話</div>
-                        <div class="contact-btn" onclick="setEditContactType('不願提供')">不願提供</div>
                         <div class="contact-btn" onclick="toggleEditOtherContactInput()">其他</div>
                     </div>
                     
@@ -2552,7 +2714,7 @@
                     <label for="edit-ageRange"><i class="fas fa-birthday-cake"></i> 年齡</label>
                     <select id="edit-ageRange">
                         <option value="">請選擇年齡間距</option>
-                        <option value="">未能提供</option>
+                        <option value="未能提供">未能提供</option>
                         <option value="0-12">0-12歲</option>
                         <option value="13-17">13-17歲</option>
                         <option value="18-25">18-25歲</option>
@@ -2579,14 +2741,21 @@
                 <!-- 改善3：編輯表單中救護車需求移除預設答案 -->
                 <div class="form-group">
                     <label for="edit-ambulance"><i class="fas fa-ambulance"></i> 救護車需求</label>
-                    <select id="edit-ambulance" onchange="toggleEditAmbulancePlate()">
+                    <select id="edit-ambulance" onchange="toggleEditAmbulanceFields()">
                         <option value="">請選擇</option>
                         <option value="不需要">不需要</option>
                         <option value="需要">需要</option>
                     </select>
-                    <div id="edit-ambulancePlateContainer" class="ambulance-plate">
-                        <label for="edit-ambulancePlate" style="margin-top: 10px;">救護車車牌號碼</label>
-                        <input type="text" id="edit-ambulancePlate" placeholder="請輸入救護車車牌號碼">
+                    <div id="edit-ambulanceFields" class="ambulance-fields">
+                        <div class="ambulance-plate">
+                            <label for="edit-ambulancePlate" style="margin-top: 10px;">救護車車牌號碼</label>
+                            <input type="text" id="edit-ambulancePlate" placeholder="請輸入救護車車牌號碼">
+                        </div>
+                        <!-- 新增：醫院名稱輸入框 -->
+                        <div class="ambulance-hospital">
+                            <label for="edit-hospital" style="margin-top: 10px;">醫院名稱</label>
+                            <input type="text" id="edit-hospital" placeholder="請輸入醫院名稱">
+                        </div>
                     </div>
                 </div>
                 
@@ -2595,9 +2764,9 @@
                     <label for="edit-exitMethod"><i class="fas fa-walking"></i> 後續處理</label>
                     <select id="edit-exitMethod" onchange="toggleEditOtherExitMethod()">
                         <option value="">請選擇後續處理</option>
-                        <option value="正常或傷勢已處理 已離開">正常或傷勢已處理 自行離開</option>
-                        <option value="需要在賓客休息區休息">需要在賓客休息區休息</option>
-                        <option value="已送院救治">已送院救治</option>
+                        <option value="正常或傷勢已處理 自行離開">正常或傷勢已處理 自行離開</option>
+                        <option value="現正在救援集合點休息中">現正在救援集合點休息中</option>
+                        <option value="已由救護車送往醫院">已由救護車送往醫院</option>
                         <option value="其他">其他</option>
                     </select>
                     <div id="edit-otherExitMethodContainer" class="other-exit-method">
@@ -2606,7 +2775,7 @@
                     </div>
                 </div>
                 
-                <!-- 改善1：編輯表單中離場時間預設為實時 -->
+                <!-- 改善1：編輯表單中離場時間無預設值 -->
                 <div class="form-group">
                     <label for="edit-exitTime"><i class="fas fa-clock"></i> 離場時間</label>
                     <input type="datetime-local" id="edit-exitTime">
@@ -2687,26 +2856,48 @@
         let dashboardRefreshInterval = null; // 用于存储自动刷新间隔
         
         // 救援地圖全局變數
-        let cabins = [], globalOffset = 0, cabinMode = 84, currentCabin = null;
-        
+       // 救援地圖全局變數
+let cabins = [], globalOffset = 0, cabinMode = 84, currentCabin = null;
+
+// === 新增：救援地图组别详情中的救援人员切换函数 ===
+function toggleOtherRescuerInput() {
+    console.log('toggleOtherRescuerInput function called');
+    const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
+    const otherRescuerContainer = document.getElementById('otherRescuerContainer');
+    
+    if (rescuedBySelect && otherRescuerContainer) {
+        if (rescuedBySelect.value === '其他') {
+            otherRescuerContainer.style.display = 'block';
+        } else {
+            otherRescuerContainer.style.display = 'none';
+            const otherRescuerInput = document.getElementById('otherRescuerInput');
+            if (otherRescuerInput) otherRescuerInput.value = '';
+        }
+    }
+}
+
+// === 新增：编辑表单中的救援人员切换函数 ===
+function toggleEditOtherRescuerInput() {
+    console.log('toggleEditOtherRescuerInput function called');
+    const rescuedBySelect = document.getElementById('edit-rescuedBy');
+    const otherRescuerContainer = document.getElementById('edit-otherRescuerContainer');
+    
+    if (rescuedBySelect && otherRescuerContainer) {
+        if (rescuedBySelect.value === '其他') {
+            otherRescuerContainer.style.display = 'block';
+        } else {
+            otherRescuerContainer.style.display = 'none';
+            const otherRescuerInput = document.getElementById('edit-otherRescuerInput');
+            if (otherRescuerInput) otherRescuerInput.value = '';
+        }
+    }
+}
+// === 新增函数结束 ===
         // Firestore 實時監聽器
         let guestRecordsListener = null;
         
         // 救援地圖登入狀態
         let rescueMapLoggedIn = false;
-        
-        // 改善1：設置當前時間為離場時間預設值
-        function setCurrentDateTime() {
-            const now = new Date();
-            // 转换为本地时间字符串，格式为 YYYY-MM-DDTHH:mm
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
         
         // 改善5：切換短信後綴
         function toggleSmsSuffix() {
@@ -2894,6 +3085,48 @@
             }
         }
         
+        // 新增：切換救護車相關字段顯示
+        function toggleAmbulanceFields() {
+            const ambulanceSelect = document.getElementById('ambulance');
+            const fieldsContainer = document.getElementById('ambulanceFields');
+            
+            if (ambulanceSelect.value === '需要') {
+                fieldsContainer.style.display = 'block';
+            } else {
+                fieldsContainer.style.display = 'none';
+                document.getElementById('ambulancePlate').value = '';
+                document.getElementById('hospital').value = '';
+            }
+        }
+        
+        // 新增：組別詳情中切換救護車相關字段顯示
+        function toggleGroupAmbulanceFields() {
+            const ambulanceSelect = document.getElementById('groupDetailAmbulance');
+            const fieldsContainer = document.getElementById('groupAmbulanceFields');
+            
+            if (ambulanceSelect.value === '需要') {
+                fieldsContainer.style.display = 'block';
+            } else {
+                fieldsContainer.style.display = 'none';
+                document.getElementById('groupDetailAmbulancePlate').value = '';
+                document.getElementById('groupDetailHospital').value = '';
+            }
+        }
+        
+        // 新增：編輯表單中切換救護車相關字段顯示
+        function toggleEditAmbulanceFields() {
+            const ambulanceSelect = document.getElementById('edit-ambulance');
+            const fieldsContainer = document.getElementById('edit-ambulanceFields');
+            
+            if (ambulanceSelect.value === '需要') {
+                fieldsContainer.style.display = 'block';
+            } else {
+                fieldsContainer.style.display = 'none';
+                document.getElementById('edit-ambulancePlate').value = '';
+                document.getElementById('edit-hospital').value = '';
+            }
+        }
+        
         // 添加時間格式化函數
         function formatFirestoreTimestamp(timestamp) {
             if (!timestamp) return '-';
@@ -3055,6 +3288,7 @@
                 });
             }, 1000);
             
+            
             // 初始化救援地圖
             initRescueMap();
             
@@ -3069,9 +3303,6 @@
             
             // 監聽窗口大小變化
             window.addEventListener('resize', optimizeForMobile);
-            
-            // 改善1：設置離場時間預設值
-            document.getElementById('exitTime').value = setCurrentDateTime();
         });
         
         // 新增：處理用戶登入的函數
@@ -3446,50 +3677,6 @@
             event.target.classList.add('active');
         }
         
-        // 救護車需求切換
-        function toggleAmbulancePlate() {
-            const ambulanceSelect = document.getElementById('ambulance');
-            const plateContainer = document.getElementById('ambulancePlateContainer');
-            
-            if (ambulanceSelect.value === '需要') {
-                plateContainer.style.display = 'block';
-            } else {
-                plateContainer.style.display = 'none';
-                document.getElementById('ambulancePlate').value = '';
-            }
-        }
-        
-        // 組別詳情中救護車需求切換
-        function toggleGroupAmbulancePlate() {
-            const ambulanceSelect = document.getElementById('groupDetailAmbulance');
-            const plateContainer = document.getElementById('groupAmbulancePlateContainer');
-            
-            if (ambulanceSelect.value === '需要') {
-                plateContainer.style.display = 'block';
-            } else {
-                plateContainer.style.display = 'none';
-                document.getElementById('groupDetailAmbulancePlate').value = '';
-            }
-        }
-        
-        // 切換其他救援人員輸入欄位顯示
-        function toggleOtherRescuerInput() {
-            const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
-            const otherRescuerContainer = document.getElementById('otherRescuerContainer');
-            const otherRescuerInput = document.getElementById('otherRescuerInput');
-            
-            if (rescuedBySelect.value === '其他') {
-                otherRescuerContainer.style.display = 'block';
-                // 如果其他救援人員輸入框有值，將其設置為救援人員的值
-                if (otherRescuerInput.value) {
-                    rescuedBySelect.value = '其他';
-                }
-            } else {
-                otherRescuerContainer.style.display = 'none';
-                otherRescuerInput.value = '';
-            }
-        }
-        
         // 問題1修復：檢查重複記錄 - 改進版本
         async function checkForDuplicates() {
             if (!validateInputs()) return;
@@ -3699,7 +3886,7 @@
                 const guestName = document.getElementById('guestName').value;
                 const contactNumber = document.getElementById('contactNumber').value;
                 const gender = document.getElementById('gender').value;
-                const ageRange = document.getElementById('ageRange').value;
+                const ageRange = document.getElementById('ageRange').value; // 这里会获取空字符串
                 const groupNumber = document.getElementById('groupNumber').value;
                 const healthStatus = document.getElementById('healthStatus').value;
 
@@ -3708,7 +3895,7 @@
                     guestName,
                     contactNumber,
                     gender,
-                    ageRange,
+                    ageRange: ageRange,
                     groupNumber,
                     healthStatus,
                     createdAt: new Date(),
@@ -4038,18 +4225,20 @@
                     // 顯示車廂號碼、組別和健康狀況
                     document.getElementById('detail-cabinNumber').textContent = data.cabinNumber || '-';
                     document.getElementById('detail-groupNumber').textContent = data.groupNumber ? `第${data.groupNumber}組` : '-';
+                    // 新增：顯示被救者姓名
+                    document.getElementById('detail-guestName').textContent = data.guestName || '-';
                     document.getElementById('detail-healthStatus').textContent = data.healthStatus || '-';
-                    
-                    // 改善1：預設離場時間為現在
-                    document.getElementById('exitTime').value = setCurrentDateTime();
                     
                     // 改善3：設定救護車需求
                     if (data.ambulance) {
                         document.getElementById('ambulance').value = data.ambulance;
                         if (data.ambulance === '需要') {
-                            document.getElementById('ambulancePlateContainer').style.display = 'block';
+                            document.getElementById('ambulanceFields').style.display = 'block';
                             if (data.ambulancePlate) {
                                 document.getElementById('ambulancePlate').value = data.ambulancePlate;
+                            }
+                            if (data.hospital) {
+                                document.getElementById('hospital').value = data.hospital;
                             }
                         }
                     } else {
@@ -4089,6 +4278,7 @@
             const exitTime = document.getElementById('exitTime').value;
             const ambulance = document.getElementById('ambulance').value;
             const ambulancePlate = document.getElementById('ambulancePlate').value;
+            const hospital = document.getElementById('hospital').value;
             
             // 改善4：處理其他後續處理方式
             let finalExitMethod = exitMethod;
@@ -4107,9 +4297,15 @@
             }
             
             // 驗證救護車需求
-            if (ambulance === '需要' && !ambulancePlate) {
-                showMessage('updater-message', '請輸入救護車車牌號碼', 'error');
-                return;
+            if (ambulance === '需要') {
+                if (!ambulancePlate) {
+                    showMessage('updater-message', '請輸入救護車車牌號碼', 'error');
+                    return;
+                }
+                if (!hospital) {
+                    showMessage('updater-message', '請輸入醫院名稱', 'error');
+                    return;
+                }
             }
             
             try {
@@ -4122,11 +4318,13 @@
                     updatedAt: new Date()
                 };
                 
-                // 只有在需要救護車時才保存車牌號碼
+                // 只有在需要救護車時才保存車牌號碼和醫院名稱
                 if (ambulance === '需要') {
                     updateData.ambulancePlate = ambulancePlate;
+                    updateData.hospital = hospital;
                 } else {
                     updateData.ambulancePlate = '';
+                    updateData.hospital = '';
                 }
                 
                 await db.collection('guests').doc(currentDocId).update(updateData);
@@ -4138,7 +4336,8 @@
                 document.getElementById('exitTime').value = '';
                 document.getElementById('ambulance').value = '';
                 document.getElementById('ambulancePlate').value = '';
-                document.getElementById('ambulancePlateContainer').style.display = 'none';
+                document.getElementById('hospital').value = '';
+                document.getElementById('ambulanceFields').style.display = 'none';
                 document.getElementById('otherExitMethodContainer').style.display = 'none';
                 document.getElementById('otherExitMethodInput').value = '';
                 
@@ -4266,11 +4465,12 @@
                     // 改善3：救護車需求
                     document.getElementById('edit-ambulance').value = data.ambulance || '';
                     document.getElementById('edit-ambulancePlate').value = data.ambulancePlate || '';
+                    document.getElementById('edit-hospital').value = data.hospital || '';
                     
                     // 改善4：後續處理
                     if (data.exitMethod) {
                         // 檢查是否為其他後續處理方式
-                        const presetOptions = ['正常或傷勢已處理 已離開', '需要在賓客休息區休息', '已送院救治'];
+                        const presetOptions = ['正常或傷勢已處理 自行離開', '現正在救援集合點休息中', '已由救護車送往醫院'];
                         if (!presetOptions.includes(data.exitMethod)) {
                             document.getElementById('edit-exitMethod').value = '其他';
                             document.getElementById('edit-otherExitMethodContainer').style.display = 'block';
@@ -4315,13 +4515,10 @@
                         } catch (error) {
                             console.error('處理離場時間錯誤:', error);
                         }
-                    } else {
-                        // 改善1：如果沒有離場時間，設置為當前時間
-                        document.getElementById('edit-exitTime').value = setCurrentDateTime();
                     }
                     
                     // 設置救護車需求顯示
-                    toggleEditAmbulancePlate();
+                    toggleEditAmbulanceFields();
                     
                     // 設置其他後續處理顯示
                     toggleEditOtherExitMethod();
@@ -4376,15 +4573,21 @@
                 updateData.exitMethod = otherExitMethod;
             }
             
-            // 處理救護車車牌
+            // 處理救護車車牌和醫院
             if (updateData.ambulance === '需要') {
                 updateData.ambulancePlate = document.getElementById('edit-ambulancePlate').value;
+                updateData.hospital = document.getElementById('edit-hospital').value;
                 if (!updateData.ambulancePlate) {
                     showMessage('edit-message', '請輸入救護車車牌號碼', 'error');
                     return;
                 }
+                if (!updateData.hospital) {
+                    showMessage('edit-message', '請輸入醫院名稱', 'error');
+                    return;
+                }
             } else {
                 updateData.ambulancePlate = '';
+                updateData.hospital = '';
             }
             
             // 處理救援人員
@@ -4438,19 +4641,6 @@
             document.getElementById('edit-message').className = 'message';
         }
 
-        // 改善1：編輯表單中救護車需求切換
-        function toggleEditAmbulancePlate() {
-            const ambulanceSelect = document.getElementById('edit-ambulance');
-            const plateContainer = document.getElementById('edit-ambulancePlateContainer');
-            
-            if (ambulanceSelect.value === '需要') {
-                plateContainer.style.display = 'block';
-            } else {
-                plateContainer.style.display = 'none';
-                document.getElementById('edit-ambulancePlate').value = '';
-            }
-        }
-
         // 改善1：編輯表單中其他救援人員輸入欄位顯示
         function toggleEditOtherRescuerInput() {
             const rescuedBySelect = document.getElementById('edit-rescuedBy');
@@ -4464,7 +4654,7 @@
             }
         }
         
-        // 修改載入記錄函數，添加編輯按鈕
+        // 修改載入記錄函數 - 改善編號系統
         async function loadRecords() {
             try {
                 showLoader();
@@ -4492,44 +4682,16 @@
                     
                     // 使用新的時間格式化函數
                     const createdAt = formatFirestoreTimestamp(data.createdAt);
-                    const exitTime = data.exitTime ? formatFirestoreTimestamp(data.exitTime) : '-';
+                    const timeLanded = data.timeLanded || '-';
                     
                     // 添加记录到所有记录数组
                     allRecords.push({
                         id,
                         ...data,
                         createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-                        exitTime: data.exitTime ? (typeof data.exitTime.toDate === 'function' ? data.exitTime.toDate() : new Date(data.exitTime)) : null
+                        timeLanded: data.timeLanded || null
                     });
                     
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${data.cabinNumber || '-'}</td>
-                        <td>${data.guestName || '-'}</td>
-                        <td>${data.contactNumber || '-'}</td>
-                        <td>${data.gender || '-'}</td>
-                        <td>${data.ageRange || '-'}</td>
-                        <td>${data.groupNumber ? '第' + data.groupNumber + '組' : '-'}</td>
-                        <td>${data.healthStatus || '-'}</td>
-                        <td>${data.ambulance || '-'}</td>
-                        <td>${data.ambulancePlate || '-'}</td>
-                        <td>${data.exitMethod || '-'}</td>
-                        <td>${exitTime}</td>
-                        <td><span class="status-badge ${data.status === 'completed' ? 'status-complete' : 'status-pending'}">
-                            ${data.status === 'completed' ? '已完成' : '處理中'}
-                        </span></td>
-                        <td>${createdAt}</td>
-                        <!-- 改善1：添加編輯按鈕 -->
-                        <td>
-                            <button class="edit-btn" onclick="editRecord('${id}')">
-                                <i class="fas fa-edit"></i> 編輯
-                            </button>
-                        </td>
-                    `;
-                    
-                    recordsList.appendChild(row);
-                    
-                    // 統計計數
                     total++;
                     if (data.status === 'completed') completed++;
                     else pending++;
@@ -4542,6 +4704,42 @@
                         else if (data.healthStatus.includes('黑色')) blackCount++;
                     }
                 });
+                
+                // 編號從總記錄數開始，最新記錄編號最大
+                let recordNumber = total;
+                
+               // 生成表格行
+allRecords.forEach(record => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${recordNumber}</td>
+        <td>${record.cabinNumber || '-'}</td>
+        <td>${record.guestName || '-'}</td>
+        <td>${record.contactNumber || '-'}</td>
+        <td>${record.gender || '-'}</td>
+        <td>${record.ageRange || '-'}</td>
+        <td>${record.groupNumber ? '第' + record.groupNumber + '組' : '-'}</td>
+        <td>${record.healthStatus || '-'}</td>
+        <td>${record.ambulance || '-'}</td>
+        <td>${record.exitMethod || '-'}</td>
+        <td>${record.timeReachedTop || '-'}</td>
+        <td>${record.timeLanded || '-'}</td>  <!-- 改為使用 record.timeLanded -->
+        <td>${record.remarks || '-'}</td>
+        <td><span class="status-badge ${record.status === 'completed' ? 'status-complete' : 'status-pending'}">
+            ${record.status === 'completed' ? '已完成' : '處理中'}
+        </span></td>
+        <td>${formatFirestoreTimestamp(record.createdAt)}</td>  <!-- 改為使用 record.createdAt -->
+        <!-- 改善1：添加編輯按鈕 -->
+        <td>
+            <button class="edit-btn" onclick="editRecord('${record.id}')">
+                <i class="fas fa-edit"></i> 編輯
+            </button>
+        </td>
+    `;
+    
+    recordsList.appendChild(row);
+    recordNumber--;
+});
                 
                 // 更新統計數字
                 const totalRecordsElem = document.getElementById('totalRecords');
@@ -4571,7 +4769,7 @@
             }
         }
         
-        // 過濾記錄 - 修復版本
+        // 過濾記錄 - 修復版本，改善編號系統
         function filterRecords() {
             const recordsList = document.getElementById('records-list');
             if (!recordsList) {
@@ -4587,15 +4785,17 @@
             
             const rows = recordsList.querySelectorAll('tr');
             let visibleCount = 0;
+            let filteredRecords = [];
             
+            // 先計算符合條件的記錄
             rows.forEach(row => {
                 const cells = row.querySelectorAll('td');
                 let match = true;
                 
                 // 搜尋框過濾
                 if (searchInput) {
-                    const cabinNumber = cells[0].textContent.toLowerCase();
-                    const guestName = cells[1].textContent.toLowerCase();
+                    const cabinNumber = cells[1].textContent.toLowerCase();
+                    const guestName = cells[2].textContent.toLowerCase();
                     if (!cabinNumber.includes(searchInput) && !guestName.includes(searchInput)) {
                         match = false;
                     }
@@ -4611,7 +4811,7 @@
                 
                 // 健康狀況過濾
                 if (match && healthFilter) {
-                    const healthStatus = cells[6].textContent;
+                    const healthStatus = cells[7].textContent;
                     if (healthStatus !== healthFilter) {
                         match = false;
                     }
@@ -4619,7 +4819,7 @@
                 
                 // 狀態過濾
                 if (match && statusFilter) {
-                    const statusBadge = cells[11].querySelector('.status-badge');
+                    const statusBadge = cells[13].querySelector('.status-badge');
                     const status = statusBadge.textContent.trim();
                     if ((statusFilter === 'completed' && status !== '已完成') || 
                         (statusFilter === 'pending' && status !== '處理中')) {
@@ -4629,14 +4829,32 @@
                 
                 // 年齡間距過濾
                 if (match && ageFilter) {
-                    const ageRange = cells[4].textContent;
+                    const ageRange = cells[5].textContent;
                     if (ageRange !== ageFilter) {
                         match = false;
                     }
                 }
                 
-                row.style.display = match ? '' : 'none';
-                if (match) visibleCount++;
+                if (match) {
+                    visibleCount++;
+                    filteredRecords.push(row);
+                }
+            });
+            
+            // 重新編號並顯示符合條件的記錄
+            let recordNumber = visibleCount;
+            filteredRecords.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                cells[0].textContent = recordNumber;
+                row.style.display = '';
+                recordNumber--;
+            });
+            
+            // 隱藏不符合條件的記錄
+            rows.forEach(row => {
+                if (!filteredRecords.includes(row)) {
+                    row.style.display = 'none';
+                }
             });
             
             // 更新統計數字以反映篩選結果
@@ -4819,8 +5037,9 @@
             document.getElementById('otherRescuerContainer').style.display = 'none';
             
             // 確保救護車需求為默認值
-            document.getElementById('groupAmbulancePlateContainer').style.display = 'none';
+            document.getElementById('groupAmbulanceFields').style.display = 'none';
             document.getElementById('groupDetailAmbulancePlate').value = '';
+            document.getElementById('groupDetailHospital').value = '';
             
             // 改善4：確保後續處理為空白
             document.getElementById('groupDetailExitMethod').value = '';
@@ -4830,7 +5049,7 @@
             // 改善1：確保時間字段為空白
             document.getElementById('groupDetailTimeReachedTop').value = '';
             document.getElementById('groupDetailTimeLanded').value = '';
-            document.getElementById('groupDetailExitTime').value = setCurrentDateTime();
+            document.getElementById('groupDetailExitTime').value = '';
             
             // 改善5：重置聯絡方式
             document.getElementById('groupDetailContactNumber').value = '';
@@ -4883,6 +5102,7 @@
                     'healthStatus': 'groupDetailHealthStatus',
                     'ambulance': 'groupDetailAmbulance',
                     'ambulancePlate': 'groupDetailAmbulancePlate',
+                    'hospital': 'groupDetailHospital',
                     'exitMethod': 'groupDetailExitMethod',
                     'rescuedBy': 'groupDetailRescuedBy',
                     'timeReachedTop': 'groupDetailTimeReachedTop',
@@ -4915,9 +5135,6 @@
                     } catch (error) {
                         console.error('處理離場時間錯誤:', error);
                     }
-                } else {
-                    // 改善1：如果沒有離場時間，設置為當前時間
-                    document.getElementById('groupDetailExitTime').value = setCurrentDateTime();
                 }
                 
                 // 處理救援人員字段
@@ -4936,10 +5153,13 @@
                         otherRescuerContainer.style.display = 'block';
                     }
                 }
-                
+                setTimeout(() => {
+                  console.log('Calling toggleOtherRescuerInput from openGroupDetailModal');
+                  toggleOtherRescuerInput();
+                }, 100);
                 // 改善4：處理後續處理字段
                 if (guestData.exitMethod) {
-                    const presetOptions = ['正常或傷勢已處理 已離開', '需要在賓客休息區休息', '已送院救治'];
+                    const presetOptions = ['正常或傷勢已處理 自行離開', '現正在救援集合點休息中', '已由救護車送往醫院'];
                     if (!presetOptions.includes(guestData.exitMethod)) {
                         document.getElementById('groupDetailExitMethod').value = '其他';
                         document.getElementById('groupDetailOtherExitMethodContainer').style.display = 'block';
@@ -4961,9 +5181,6 @@
                 // 改善3：確保救護車需求為空白
                 document.getElementById('groupDetailAmbulance').value = '';
                 
-                // 改善1：設置離場時間為當前時間
-                document.getElementById('groupDetailExitTime').value = setCurrentDateTime();
-                
                 // 清除QR碼
                 const qrcodeDiv = document.getElementById('group-qrcode');
                 if (qrcodeDiv) {
@@ -4975,7 +5192,7 @@
             modal.style.display = 'flex';
             
             // 設置救護車需求顯示
-            toggleGroupAmbulancePlate();
+            toggleGroupAmbulanceFields();
             
             // 設置救援人員顯示
             toggleOtherRescuerInput();
@@ -5001,7 +5218,6 @@
                 for (const [key, value] of formData.entries()) {
                     guestData[key] = value;
                 }
-                
                 // 處理救援人員字段
                 const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
                 const otherRescuerInput = document.getElementById('otherRescuerInput');
@@ -5056,9 +5272,15 @@
                 // 改善2：健康狀況改為選填，不再檢查
                 
                 // 檢查救護車需求
-                if (guestData.ambulance === '需要' && !guestData.ambulancePlate) {
-                    alert('請輸入救護車車牌號碼');
-                    return;
+                if (guestData.ambulance === '需要') {
+                    if (!guestData.ambulancePlate) {
+                        alert('請輸入救護車車牌號碼');
+                        return;
+                    }
+                    if (!guestData.hospital) {
+                        alert('請輸入醫院名稱');
+                        return;
+                    }
                 }
                 
                 const docId = guestData.docId;
@@ -5075,7 +5297,7 @@
 車廂 ${guestData.cabinNumber} 中已經存在第${guestData.groupNumber}組
 
 現有記錄：
-- 賓客姓名：${existingRecord.guestName || '未提供'}
+- 被救者姓名：${existingRecord.guestName || '未提供'}
 - 聯絡方式：${existingRecord.contactNumber || '未提供'}
 - 健康狀況：${existingRecord.healthStatus || '未提供'}
 
@@ -6008,6 +6230,7 @@
                                     <div>聯絡方式: ${guestData.contactNumber || '未提供'}</div>
                                     <div>健康狀況: ${guestData.healthStatus || '未提供'}</div>
                                     <div>救護車需求: ${guestData.ambulance || '不需要'}</div>
+                                    <div>醫院名稱: ${guestData.hospital || '無'}</div>
                                     <div>後續處理: ${guestData.exitMethod || '未處理'}</div>
                                     <div>狀態: <span class="status-badge ${statusClass}">${statusText}</span></div>
                                 </div>
@@ -6065,7 +6288,7 @@
                             <div class="section-title">賓客基本資訊</div>
                             <div class="field"><span class="field-label">車廂號碼:</span> ${guestData.cabinNumber || '未設定'}</div>
                             <div class="field"><span class="field-label">組別:</span> 第${groupNumber}組</div>
-                            <div class="field"><span class="field-label">賓客姓名:</span> ${guestData.guestName || '未提供'}</div>
+                            <div class="field"><span class="field-label">被救者姓名:</span> ${guestData.guestName || '未提供'}</div>
                             <div class="field"><span class="field-label">聯絡方式:</span> ${guestData.contactNumber || '未提供'}</div>
                             <div class="field"><span class="field-label">性別:</span> ${guestData.gender || '未提供'}</div>
                             <div class="field"><span class="field-label">年齡間距:</span> ${guestData.ageRange || '未提供'}</div>
@@ -6076,6 +6299,7 @@
                             <div class="section-title">救援資訊</div>
                             <div class="field"><span class="field-label">救護車需求:</span> ${guestData.ambulance || '不需要'}</div>
                             <div class="field"><span class="field-label">救護車車牌:</span> ${guestData.ambulancePlate || '無'}</div>
+                            <div class="field"><span class="field-label">醫院名稱:</span> ${guestData.hospital || '無'}</div>
                             <div class="field"><span class="field-label">後續處理:</span> ${guestData.exitMethod || '未處理'}</div>
                             <div class="field"><span class="field-label">離場時間:</span> ${guestData.exitTime || '未設定'}</div>
                             <div class="field"><span class="field-label">救援人員:</span> ${guestData.rescuedBy || '未指派'}</div>
@@ -6268,7 +6492,7 @@
             }
             
             if (!guestName) {
-                showMessage('creator-message', '請輸入賓客姓名', 'error');
+                showMessage('creator-message', '請輸入被救者姓名', 'error');
                 return false;
             }
             
