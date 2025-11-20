@@ -2856,43 +2856,46 @@
         let dashboardRefreshInterval = null; // 用于存储自动刷新间隔
         
         // 救援地圖全局變數
-       // 救援地圖全局變數
-let cabins = [], globalOffset = 0, cabinMode = 84, currentCabin = null;
-
-// === 新增：救援地图组别详情中的救援人员切换函数 ===
-function toggleOtherRescuerInput() {
-    console.log('toggleOtherRescuerInput function called');
-    const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
-    const otherRescuerContainer = document.getElementById('otherRescuerContainer');
-    
-    if (rescuedBySelect && otherRescuerContainer) {
-        if (rescuedBySelect.value === '其他') {
-            otherRescuerContainer.style.display = 'block';
-        } else {
-            otherRescuerContainer.style.display = 'none';
-            const otherRescuerInput = document.getElementById('otherRescuerInput');
-            if (otherRescuerInput) otherRescuerInput.value = '';
+        let cabins = [], globalOffset = 0, cabinMode = 84, currentCabin = null;
+        
+        // 新增：救援地图状态管理
+        let rescueMapInitialized = false;
+        
+        // === 新增：救援地图组别详情中的救援人员切换函数 ===
+        function toggleOtherRescuerInput() {
+            console.log('toggleOtherRescuerInput function called');
+            const rescuedBySelect = document.getElementById('groupDetailRescuedBy');
+            const otherRescuerContainer = document.getElementById('otherRescuerContainer');
+            
+            if (rescuedBySelect && otherRescuerContainer) {
+                if (rescuedBySelect.value === '其他') {
+                    otherRescuerContainer.style.display = 'block';
+                } else {
+                    otherRescuerContainer.style.display = 'none';
+                    const otherRescuerInput = document.getElementById('otherRescuerInput');
+                    if (otherRescuerInput) otherRescuerInput.value = '';
+                }
+            }
         }
-    }
-}
 
-// === 新增：编辑表单中的救援人员切换函数 ===
-function toggleEditOtherRescuerInput() {
-    console.log('toggleEditOtherRescuerInput function called');
-    const rescuedBySelect = document.getElementById('edit-rescuedBy');
-    const otherRescuerContainer = document.getElementById('edit-otherRescuerContainer');
-    
-    if (rescuedBySelect && otherRescuerContainer) {
-        if (rescuedBySelect.value === '其他') {
-            otherRescuerContainer.style.display = 'block';
-        } else {
-            otherRescuerContainer.style.display = 'none';
-            const otherRescuerInput = document.getElementById('edit-otherRescuerInput');
-            if (otherRescuerInput) otherRescuerInput.value = '';
+        // === 新增：编辑表单中的救援人员切换函数 ===
+        function toggleEditOtherRescuerInput() {
+            console.log('toggleEditOtherRescuerInput function called');
+            const rescuedBySelect = document.getElementById('edit-rescuedBy');
+            const otherRescuerContainer = document.getElementById('edit-otherRescuerContainer');
+            
+            if (rescuedBySelect && otherRescuerContainer) {
+                if (rescuedBySelect.value === '其他') {
+                    otherRescuerContainer.style.display = 'block';
+                } else {
+                    otherRescuerContainer.style.display = 'none';
+                    const otherRescuerInput = document.getElementById('edit-otherRescuerInput');
+                    if (otherRescuerInput) otherRescuerInput.value = '';
+                }
+            }
         }
-    }
-}
-// === 新增函数结束 ===
+        // === 新增函数结束 ===
+        
         // Firestore 實時監聽器
         let guestRecordsListener = null;
         
@@ -5432,6 +5435,12 @@ allRecords.forEach(record => {
         
         // 初始化救援地圖
         function initRescueMap() {
+            // 如果已經初始化過，直接返回
+            if (rescueMapInitialized) {
+                console.log('救援地圖已經初始化，跳過重新初始化');
+                return;
+            }
+            
             const svg = document.getElementById("map");
             
             // 繩索和場景幾何
@@ -6042,18 +6051,29 @@ allRecords.forEach(record => {
                 }
             };
             
-            // 清除所有資料
+            // 清除所有資料 - 改進版本
             window.clearAllData = function() {
                 if(!confirm("確定要清除所有車廂資料嗎？")) return;
                 
+                // 重置車廂位置
+                globalOffset = 0;
+                layoutCabins();
+                
+                // 清除車廂號碼和字段
                 cabins.forEach(c => {
                     c.fields = {};
                     c.elLabel.textContent = "";
                     realtimeDb.ref("cabins/" + c.id).remove();
                 });
                 
+                // 清除輸入欄位
+                document.getElementById("seqInput").value = "";
+                
                 updateEnhancedSummary();
                 updateRescueMapFromFirestore();
+                
+                // 保存地圖狀態
+                saveMapState();
             };
             
             // 切換車廂模式
@@ -6062,6 +6082,9 @@ allRecords.forEach(record => {
                 this.textContent = "切換到 " + (cabinMode === 84 ? "109" : "84") + " 車廂";
                 document.getElementById("modeLabel").textContent = "模式: " + cabinMode + " 車廂";
                 buildCabins();
+                
+                // 保存地圖狀態
+                saveMapState();
             });
             
             // 匯出CSV
@@ -6110,14 +6133,78 @@ allRecords.forEach(record => {
                     });
                     
                     window.addEventListener("mouseup", () => {
-                        dragging = false;
-                        ropeHit.style.cursor = "grab";
+                        if(dragging) {
+                            dragging = false;
+                            ropeHit.style.cursor = "grab";
+                            
+                            // 保存地圖狀態
+                            saveMapState();
+                        }
                     });
                 }
             });
             
+            // 新增：保存地圖狀態
+            function saveMapState() {
+                const mapState = {
+                    globalOffset: globalOffset,
+                    cabinMode: cabinMode,
+                    cabins: {}
+                };
+                
+                // 保存每個車廂的狀態
+                cabins.forEach(cabin => {
+                    mapState.cabins[cabin.id] = cabin.fields;
+                });
+                
+                // 保存到本地存儲
+                localStorage.setItem('rescueMapState', JSON.stringify(mapState));
+                console.log('地圖狀態已保存');
+            }
+            
+            // 新增：載入地圖狀態
+            function loadMapState() {
+                try {
+                    const savedState = localStorage.getItem('rescueMapState');
+                    if (savedState) {
+                        const mapState = JSON.parse(savedState);
+                        
+                        // 恢復全局狀態
+                        globalOffset = mapState.globalOffset || 0;
+                        cabinMode = mapState.cabinMode || 84;
+                        
+                        // 恢復每個車廂的狀態
+                        if (mapState.cabins) {
+                            cabins.forEach(cabin => {
+                                if (mapState.cabins[cabin.id]) {
+                                    cabin.fields = mapState.cabins[cabin.id];
+                                    cabin.elLabel.textContent = cabin.fields.sequence || "";
+                                }
+                            });
+                        }
+                        
+                        console.log('地圖狀態已載入');
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('載入地圖狀態失敗:', error);
+                }
+                return false;
+            }
+            
             // 初始構建
-            buildCabins();
+            if (loadMapState()) {
+                // 如果成功載入狀態，更新界面
+                document.getElementById("toggleBtn").textContent = "切換到 " + (cabinMode === 84 ? "109" : "84") + " 車廂";
+                document.getElementById("modeLabel").textContent = "模式: " + cabinMode + " 車廂";
+                buildCabins();
+                layoutCabins();
+            } else {
+                // 否則使用默認設置
+                buildCabins();
+            }
+            
+            rescueMapInitialized = true;
             
             // 新增：重新加載賓客數據
             window.reloadGuestData = function() {
