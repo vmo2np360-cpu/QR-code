@@ -6088,24 +6088,152 @@ allRecords.forEach(record => {
             });
             
             // 匯出CSV
-            document.getElementById("exportBtn").addEventListener("click", function() {
-                const csv = ["車廂號碼,狀態,救援人員,到達頂部時間,著陸時間,備註"];
-                cabins.forEach(c => {
-                    const f = c.fields;
-                    const status = c.elGroup.classList.contains("status-red") ? "等待" :
-                                   c.elGroup.classList.contains("status-yellow") ? "救援中" :
-                                   c.elGroup.classList.contains("status-green") ? "已著陸" : "空";
-                    csv.push(`"${f.sequence || ""}","${status}","${f.rescuedBy || ""}","${f.timeReachedTop || ""}","${f.timeLanded || ""}","${f.remarks || ""}"`);
-                });
-                
-                const blob = new Blob([csv.join("\n")], {type: "text/csv"});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "纜車救援資料.csv";
-                a.click();
-                URL.revokeObjectURL(url);
-            });
+       // 修復後的CSV匯出功能
+// 修復後的CSV匯出功能 - 完整組別記錄
+document.getElementById("exportBtn").addEventListener("click", async function() {
+    try {
+        showLoader();
+        
+        // 使用UTF-8 BOM確保中文正確顯示
+        const BOM = "\uFEFF";
+        
+        // 構建完整的CSV標題行
+        const headers = [
+            "車廂號碼", "組別", "被救者姓名", "聯絡方式", "性別", "年齡", 
+            "健康狀況", "救護車需求", "救護車車牌", "醫院名稱", "後續處理", 
+            "離場時間", "救援人員", "開始救援時間", "完成救援時間", "備註", "狀態"
+        ];
+        
+        // 從Firestore獲取所有賓客記錄
+        const snapshot = await db.collection('guests').get();
+        const allGuestRecords = [];
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            data.docId = doc.id;
+            allGuestRecords.push(data);
+        });
+        
+        console.log(`從Firestore載入了 ${allGuestRecords.length} 筆組別記錄`);
+        
+        // 構建CSV內容
+        let csvContent = BOM + headers.join(",") + "\n";
+        
+        // 按照車廂號碼和組別排序記錄
+        const sortedRecords = allGuestRecords.sort((a, b) => {
+            // 先按車廂號碼排序
+            const cabinCompare = (a.cabinNumber || "").localeCompare(b.cabinNumber || "");
+            if (cabinCompare !== 0) return cabinCompare;
+            
+            // 相同車廂按組別排序
+            const groupA = parseInt(a.groupNumber) || 0;
+            const groupB = parseInt(b.groupNumber) || 0;
+            return groupA - groupB;
+        });
+        
+        // 為每條組別記錄創建CSV行
+        sortedRecords.forEach(record => {
+            // 處理特殊字符，確保CSV格式正確
+            const escapeCSV = (field) => {
+                if (field === null || field === undefined) return "";
+                const stringField = String(field);
+                // 如果字段包含逗號、換行或引號，需要用引號括起來
+                if (stringField.includes(',') || stringField.includes('\n') || stringField.includes('"')) {
+                    return '"' + stringField.replace(/"/g, '""') + '"';
+                }
+                return stringField;
+            };
+            
+            // 格式化時間字段
+            const formatDateTime = (timestamp) => {
+                if (!timestamp) return "";
+                try {
+                    let date;
+                    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+                        date = timestamp.toDate();
+                    } else if (timestamp instanceof Date) {
+                        date = timestamp;
+                    } else if (typeof timestamp === 'string') {
+                        date = new Date(timestamp);
+                    } else if (typeof timestamp === 'number') {
+                        date = new Date(timestamp);
+                    } else if (timestamp.seconds) {
+                        date = new Date(timestamp.seconds * 1000);
+                    } else {
+                        return "";
+                    }
+                    
+                    if (isNaN(date.getTime())) return "";
+                    
+                    return date.toLocaleString('zh-TW', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    }).replace(/\//g, '/');
+                } catch (error) {
+                    console.error('時間格式化錯誤:', error);
+                    return "";
+                }
+            };
+            
+            // 格式化時間字段（僅時間部分）
+            const formatTime = (timeStr) => {
+                if (!timeStr) return "";
+                // 如果是HH:MM格式，直接返回
+                if (typeof timeStr === 'string' && /^\d{1,2}:\d{2}$/.test(timeStr)) {
+                    return timeStr;
+                }
+                return timeStr || "";
+            };
+            
+            // 構建行數據
+            const row = [
+                escapeCSV(record.cabinNumber || ""),
+                escapeCSV(record.groupNumber ? `第${record.groupNumber}組` : ""),
+                escapeCSV(record.guestName || ""),
+                escapeCSV(record.contactNumber || ""),
+                escapeCSV(record.gender || ""),
+                escapeCSV(record.ageRange || ""),
+                escapeCSV(record.healthStatus || ""),
+                escapeCSV(record.ambulance || ""),
+                escapeCSV(record.ambulancePlate || ""),
+                escapeCSV(record.hospital || ""),
+                escapeCSV(record.exitMethod || ""),
+                escapeCSV(formatDateTime(record.exitTime)),
+                escapeCSV(record.rescuedBy || ""),
+                escapeCSV(formatTime(record.timeReachedTop)),
+                escapeCSV(formatTime(record.timeLanded)),
+                escapeCSV(record.remarks || ""),
+                escapeCSV(record.status === 'completed' ? '已完成' : '處理中')
+            ];
+            
+            csvContent += row.join(",") + "\n";
+        });
+        
+        // 創建並下載CSV文件
+        const blob = new Blob([csvContent], {type: "text/csv;charset=utf-8;"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `纜車救援組別記錄_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // 顯示成功消息
+        alert(`CSV檔案已成功匯出！共 ${sortedRecords.length} 筆組別記錄`);
+        
+    } catch (error) {
+        console.error('CSV匯出失敗:', error);
+        alert('CSV匯出失敗: ' + error.message);
+    } finally {
+        hideLoader();
+    }
+});
             
             // 移動模式切換
             let moveMode = false;
