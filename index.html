@@ -999,7 +999,30 @@
             stroke: #333;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
         }
-        
+        /* 新增：專門用於高亮的動畫，完全不會影響位置 */
+@keyframes pulse-highlight {
+    0% { 
+        stroke: gold;
+        stroke-width: 3;
+        filter: url(#highlightGlow);
+    }
+    50% { 
+        stroke: orange;
+        stroke-width: 4;
+        filter: url(#highlightGlow) drop-shadow(0 0 10px rgba(255,215,0,0.7));
+    }
+    100% { 
+        stroke: gold;
+        stroke-width: 3;
+        filter: url(#highlightGlow);
+    }
+}
+
+/* 確保車廂組的transform不被覆蓋 */
+.cabin {
+    transform-box: fill-box;
+    transform-origin: center;
+}
         .city {
             fill: #ccc;
             opacity: 0.6;
@@ -2537,15 +2560,15 @@
                         <rect x="0" y="0" width="320" height="200" fill="white" stroke="#333"/>
                         <text x="160" y="40" font-size="40" font-weight="bold" text-anchor="middle">車廂狀態</text>
                         <g transform="translate(25,60)">
-                            <rect width="26" height="26" fill="red" stroke="#333"/>
+                            <rect width="26" height="26" fill="#dc2626" stroke="#333"/>
                             <text x="40" y="19" font-size="30">等待</text>
                         </g>
                         <g transform="translate(25,95)">
-                            <rect width="26" height="26" fill="yellow" stroke="#333"/>
+                            <rect width="26" height="26" fill="#d97706" stroke="#333"/>
                             <text x="40" y="19" font-size="30">救援中</text>
                         </g>
                         <g transform="translate(25,130)">
-                            <rect width="26" height="26" fill="lime" stroke="#333"/>
+                            <rect width="26" height="26" fill="#059669" stroke="#333"/>
                             <text x="40" y="19" font-size="30">已著陸</text>
                         </g>
                     </g>
@@ -2590,9 +2613,9 @@
                             
                             <div id="map-qrcode"></div>
                             <button type="submit">儲存</button>
-                            <button type="button" onclick="clearForm()">清除</button>
                             <button type="button" onclick="closeModal()">取消</button>
                             <button type="button" onclick="printFullCabinInfo()">列印完整資料</button>
+                            <button type="button" onclick="clearForm()">清除</button>
                             <button type="button" class="clear-all-times-btn" onclick="clearTimeFields()">
                                 <i class="fas fa-broom"></i> 清除所有時間
                             </button>
@@ -5493,10 +5516,10 @@ allRecords.forEach(record => {
                 updateRescueMapFromFirestore();
                 
                 // 問題2修復：如果當前有打開的車廂表單，立即更新組別列表
-                if (currentCabin) {
-                    await loadGroupList(currentCabin);
-                    await loadGroupStatus(currentCabin);
-                }
+              if (currentCabin) {
+    // 使用正確的函數名
+    await reloadGroupData(currentCabin);
+}
                 
                 closeGroupDetailModal();
                 
@@ -5587,7 +5610,24 @@ allRecords.forEach(record => {
                 console.log('救援地圖已經初始化，跳過重新初始化');
                 return;
             }
-            
+            // 在控制面板中添加清除高亮按鈕
+function addClearHighlightButton() {
+    const controls = document.getElementById("controls");
+    if (controls && !document.getElementById("clearHighlightBtn")) {
+        const clearBtn = document.createElement("button");
+        clearBtn.id = "clearHighlightBtn";
+        clearBtn.textContent = "清除搜尋";
+        clearBtn.onclick = clearCabinHighlight;
+        clearBtn.style.background = "var(--warning)";
+        clearBtn.style.color = "white";
+        clearBtn.style.border = "none";
+        clearBtn.style.padding = "8px 12px";
+        clearBtn.style.borderRadius = "4px";
+        clearBtn.style.cursor = "pointer";
+        clearBtn.style.marginLeft = "10px";
+        controls.appendChild(clearBtn);
+    }
+}
             const svg = document.getElementById("map");
             
             // 繩索和場景幾何
@@ -5793,7 +5833,8 @@ allRecords.forEach(record => {
                     }, 300);
                 }
             };
-            
+            // 在initRescueMap函數末尾添加
+setTimeout(addClearHighlightButton, 1000);
             // 模態框
             const modal = document.getElementById("formModal"), form = document.getElementById("cabinForm");
             
@@ -6180,24 +6221,114 @@ allRecords.forEach(record => {
                 updateEnhancedSummary();
                 updateRescueMapFromFirestore();
             };
+            // 新增：重新加載組別數據的函數
+window.reloadGroupData = async function(cabin) {
+    try {
+        await loadGroupList(cabin);
+        await loadGroupStatus(cabin);
+    } catch (error) {
+        console.error('重新加載組別數據失敗:', error);
+    }
+};
+
+ // 完全修復搜尋車廂功能 - 確保不影響車廂位置
+window.searchCabin = function() {
+    try {
+        const q = document.getElementById("searchBox").value.trim();
+        if(!q) {
+            alert('請輸入要搜尋的車廂號碼');
+            return;
+        }
+        
+        // 先恢復所有車廂的原始樣式
+        cabins.forEach(c => {
+            // 移除所有高亮樣式
+            c.elShape.style.stroke = "";
+            c.elShape.style.strokeWidth = "";
+            c.elShape.style.filter = "";
+            c.elShape.style.animation = "";
+            // 確保transform不被修改
+            c.elGroup.style.transform = "";
+        });
+        
+        const cabin = cabins.find(c => c.fields.sequence === q);
+        if(cabin) {
+            // 保存原始位置信息 - 非常重要！
+            const originalTransform = cabin.elGroup.getAttribute("transform");
             
-            // 搜尋車廂
-            window.searchCabin = function() {
-                const q = document.getElementById("searchBox").value.trim();
-                if(!q) return;
-                
-                const cabin = cabins.find(c => c.fields.sequence === q);
-                if(cabin) {
-                    cabin.elGroup.classList.add("cabin-highlight");
-                    setTimeout(() => cabin.elGroup.classList.remove("cabin-highlight"), 2000);
-                    
-                    // 滾動到該車廂
-                    const bbox = cabin.elGroup.getBBox();
-                    svg.setAttribute("viewBox", `${bbox.x - 100} ${bbox.y - 100} 200 200`);
-                    setTimeout(() => svg.setAttribute("viewBox", "0 0 2000 700"), 2000);
-                }
+            console.log('原始位置:', originalTransform);
+            
+            // 使用完全不影響位置的高亮效果
+            cabin.elShape.style.stroke = "gold";
+            cabin.elShape.style.strokeWidth = "3";
+            cabin.elShape.style.filter = "url(#highlightGlow)";
+            
+            // 使用不影響位置的動畫
+            cabin.elShape.style.animation = "pulse-highlight 1s ease-in-out infinite";
+            
+            // 強制保持原始位置
+            cabin.elGroup.setAttribute("transform", originalTransform);
+            
+            // 保存高亮車廂信息以便後續恢復
+            window.lastHighlightedCabin = {
+                cabin: cabin,
+                originalTransform: originalTransform
             };
             
+            alert(`已找到車廂 ${q}，請查看地圖中閃亮顯示的車廂`);
+            
+            // 5秒後自動恢復原始樣式
+            setTimeout(() => {
+                if (cabin && cabin.elShape) {
+                    cabin.elShape.style.stroke = "";
+                    cabin.elShape.style.strokeWidth = "";
+                    cabin.elShape.style.filter = "";
+                    cabin.elShape.style.animation = "";
+                    // 確保位置保持不變
+                    cabin.elGroup.setAttribute("transform", originalTransform);
+                }
+                window.lastHighlightedCabin = null;
+            }, 5000);
+            
+        } else {
+            alert(`找不到車廂號碼: ${q}\n請檢查車廂號碼是否正確`);
+        }
+    } catch (error) {
+        console.error('搜尋車廂時發生錯誤:', error);
+        alert('搜尋功能發生錯誤');
+    }
+};
+            // 新增：更安全的手動清除高亮功能
+window.clearCabinHighlight = function() {
+    if (window.lastHighlightedCabin) {
+        const { cabin, originalTransform } = window.lastHighlightedCabin;
+        
+        // 恢復原始樣式
+        cabin.elShape.style.stroke = "";
+        cabin.elShape.style.strokeWidth = "";
+        cabin.elShape.style.filter = "";
+        cabin.elShape.style.animation = "";
+        
+        // 強制恢復原始位置
+        if (originalTransform) {
+            cabin.elGroup.setAttribute("transform", originalTransform);
+        }
+        
+        window.lastHighlightedCabin = null;
+        alert('車廂高亮已清除');
+    } else {
+        // 如果沒有記錄，仍然清除所有車廂的高亮
+        cabins.forEach(c => {
+            if (c.elShape) {
+                c.elShape.style.stroke = "";
+                c.elShape.style.strokeWidth = "";
+                c.elShape.style.filter = "";
+                c.elShape.style.animation = "";
+            }
+        });
+        alert('所有車廂高亮已清除');
+    }
+};
             // 清除所有資料 - 改進版本
             window.clearAllData = function() {
                 if(!confirm("確定要清除所有車廂資料嗎？")) return;
@@ -6381,21 +6512,27 @@ document.getElementById("exportBtn").addEventListener("click", async function() 
 });
             
             // 移動模式切換
-            let moveMode = false;
-            document.getElementById("moveToggleBtn").addEventListener("click", function() {
-                moveMode = !moveMode;
-                this.textContent = moveMode ? "禁用移動" : "啟用移動";
-                ropeHit.style.cursor = moveMode ? "grab" : "default";
-                ropeHit.style.pointerEvents = moveMode ? "all" : "none";
-                
-                if(moveMode) {
-                    let dragging = false, lastX;
-                    
-                    ropeHit.addEventListener("mousedown", e => {
-                        dragging = true;
-                        lastX = e.clientX;
-                        ropeHit.style.cursor = "grabbing";
-                    });
+            // 移動模式切換 - 確保與高亮功能兼容
+let moveMode = false;
+document.getElementById("moveToggleBtn").addEventListener("click", function() {
+    moveMode = !moveMode;
+    this.textContent = moveMode ? "禁用移動" : "啟用移動";
+    ropeHit.style.cursor = moveMode ? "grab" : "default";
+    ropeHit.style.pointerEvents = moveMode ? "all" : "none";
+    
+    if(moveMode) {
+        let dragging = false, lastX;
+        
+        ropeHit.addEventListener("mousedown", e => {
+            dragging = true;
+            lastX = e.clientX;
+            ropeHit.style.cursor = "grabbing";
+            
+            // 在開始拖動時清除高亮
+            if (window.lastHighlightedCabin) {
+                clearCabinHighlight();
+            }
+        });
                     
                     window.addEventListener("mousemove", e => {
                         if(dragging) {
