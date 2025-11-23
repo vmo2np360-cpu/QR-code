@@ -54,7 +54,7 @@
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1800px;
             margin: 0 auto;
             padding: 0 20px;
         }
@@ -822,19 +822,28 @@
             overflow-y: auto;
         }
         
-        /* 改进的控件样式 */
-        #controls {
-            padding: 16px;
-            background: #fff;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 15px;
-            border-radius: var(--border-radius-sm);
-            box-shadow: var(--shadow);
-        }
+        /* 調整控制欄以適應更寬的佈局 */
+#controls {
+    padding: 16px;
+    background: #fff;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow);
+    min-width: 900px; /* 匹配地圖寬度 */
+}
+
+/* 移動端適配 */
+@media (max-width: 768px) {
+    #controls {
+        min-width: auto;
+        overflow-x: auto; /* 小屏幕允許水平滾動 */
+    }
+}
         
         #controls textarea {
             flex: 1;
@@ -894,16 +903,29 @@
             color: #444;
         }
         
-        #map {
-            width: 100%;
-            height: 700px;
-            background: var(--light-blue);
-            display: block;
-            border: 1px solid #e2e8f0;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-        }
-        
+#map {
+    width: 100%;
+    height: 700px;
+    background: var(--light-blue);
+    display: block;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    min-width: 1800px; /* 確保最小寬度 */
+}
+        /* 移動端適配調整 */
+@media (max-width: 768px) {
+    #map {
+        height: 500px;
+        min-width: auto; /* 移動端恢復自動寬度 */
+        overflow-x: auto; /* 允許水平滾動 */
+    }
+    
+    #rescue-map-section .container {
+        max-width: 100%;
+        padding: 0 10px;
+    }
+}
         /* 改进的模态框 */
         .modal {
             position: fixed;
@@ -1020,6 +1042,7 @@
 
 /* 確保車廂組的transform不被覆蓋 */
 .cabin {
+    cursor: pointer;
     transform-box: fill-box;
     transform-origin: center;
 }
@@ -1054,10 +1077,15 @@
             cursor: pointer;
         }
         
-        .cabin polygon {
-            fill: #fff;
-            stroke: #333;
-        }
+   .cabin polygon {
+    fill: #fff;
+    stroke: #333;
+    transition: var(--transition);
+}
+/* 增大車廂形狀大小 */
+.cabin polygon {
+    transform: scale(1.2); /* 增大20% */
+}
         
         .status-red polygon {
             fill: var(--danger);
@@ -1071,16 +1099,19 @@
             fill: var(--success);
         }
         
-        .seq-label {
-            font-size: 20px;
-            font-weight: bold;
-            text-anchor: middle;
-            dominant-baseline: middle;
-        }
+       .seq-label {
+    font-size: 24px; /* 從20px增加到24px */
+    font-weight: bold;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: #111; /* 確保文字顏色深色 */
+    pointer-events: none; /* 防止文字阻擋點擊 */
+    user-select: none; /* 防止文字被選擇 */
+}
         
         .cabin-highlight polygon {
             stroke: gold;
-            stroke-width: 6;
+            stroke-width: 8;
             filter: url(#highlightGlow);
             animation: pulse 0.6s ease-in-out infinite;
         }
@@ -2544,7 +2575,7 @@
                     </div>
                 </div>
                 
-                <svg id="map" viewBox="0 0 2000 700">
+                <svg id="map" viewBox="0 0 4000 700">
                     <defs>
                         <linearGradient id="gradMountain" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#388E3C"/><stop offset="100%" stop-color="#A5D6A7"/></linearGradient>
                         <linearGradient id="gradBay" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#81D4FA"/><stop offset="100%" stop-color="#0288D1"/></linearGradient>
@@ -5815,18 +5846,88 @@ function addClearHighlightButton() {
             const svg = document.getElementById("map");
             
             // 繩索和場景幾何
-            const segments = ["TC","T1","T2A","AIAS","T2B","T3","T4","T5","NLS","T6","T7","NP"];
-            const slots = [2,2,2,2,10,6,5,1,2,7,3];
-            const startX = 100, endX = 1900, unit = (endX - startX) / 42;
-            const baseY = 600, topY = 300, npY = 340;
-            let x = startX;
-            const xCoords = [x];
-            for(let i = 0; i < slots.length; i++) {
-                x += slots[i] * unit;
-                xCoords.push(x);
-            }
-            const t2bX = xCoords[4], t3X = xCoords[5], nlsX = xCoords[8], npX = xCoords[11];
+           const segments = ["TC","T1","T2A","AIAS","T2B","T3","T4","T5","NLS","T6","T7","NP"];
+    const slots = [2,2,2,2,10,6,5,1,2,7,3];
+    
+    // 擴展起點和終點，增加可用空間
+    const startX = 150;  // 從100增加到150
+    const endX = 2650;   // 從1900增加到2650（增加750單位）
+    const unit = (endX - startX) / 42; // 重新計算單位
+    
+    const baseY = 600, topY = 300, npY = 340;
+    let x = startX;
+    const xCoords = [x];
+    
+    for(let i = 0; i < slots.length; i++) {
+        x += slots[i] * unit;
+        xCoords.push(x);
+    }
+             const t2bX = xCoords[4], t3X = xCoords[5], nlsX = xCoords[8], npX = xCoords[11];
+              // === 更新SVG viewBox ===
+    svg.setAttribute("viewBox", "0 0 2800 700"); // 寬度從2000增加到2800
+    
+    // === 修改車廂大小計算 ===
+    window.buildCabins = function() {
+        cabins.forEach(c => {
+            if(c.elGroup) svg.removeChild(c.elGroup);
+        });
+        cabins = [];
+        const total = cabinMode;
+        
+        // 根據車廂模式動態調整大小
+        const size = cabinMode === 109 ? 20 : 24; // 109模式下增大到20（原14），84模式24（原18）
+        const fontSize = cabinMode === 109 ? 18 : 22; // 字體大小相應增大
+        
+        for(let i = 0; i < total; i++) {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute("class", "cabin");
             
+            const pts = [];
+            for(let j = 0; j < 6; j++) {
+                const a = Math.PI / 3 * j;
+                pts.push((size * Math.cos(a)) + "," + (size * Math.sin(a)));
+            }
+            
+            const hex = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            hex.setAttribute("points", pts.join(" "));
+            g.appendChild(hex);
+            
+            const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            lbl.setAttribute("class", "seq-label");
+            lbl.setAttribute("y", "5");
+            lbl.setAttribute("font-size", fontSize); // 設置字體大小
+            g.appendChild(lbl);
+            
+            const c = {
+                id: "cabin-" + i,
+                fields: {},
+                elGroup: g,
+                elShape: hex,
+                elLabel: lbl
+            };
+            
+            g.addEventListener("dblclick", () => openModal(c));
+            cabins.push(c);
+            svg.appendChild(g);
+        }
+        layoutCabins();
+        updateEnhancedSummary();
+        updateRescueMapFromFirestore();
+        restoreCabinSequences();
+    };
+    
+    // === 調整圖例位置 ===
+    // 將圖例向右移動以適應新寬度
+    const legend = document.getElementById("legend");
+    if (legend) {
+        legend.setAttribute("transform", "translate(2200,460)"); // 從1600調整到2200
+    }
+    
+    // === 調整摘要位置 ===
+    const svgSummary = document.getElementById("svgSummary");
+    if (svgSummary) {
+        svgSummary.setAttribute("transform", "translate(1000,0)"); // 從700調整到1000
+    }
             // 背景
             function addRect(x, y, w, h, cls) {
                 const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
