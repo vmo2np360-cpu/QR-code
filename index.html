@@ -20,9 +20,9 @@
             --primary-dark: #1d4ed8;
             --secondary: #059669;
             --secondary-dark: #047857;
-            --danger: #dc2626;
-            --warning: #d97706;
-            --success: #059669;
+    --danger: #FF0000; /* 紅色改為純紅色 */
+    --warning: #00eeff; /* 黃色改為純黃色 */
+    --success: #00FF00; /* 綠色改為純綠色 */
             --light: #f8fafc;
             --dark: #1e293b;
             --gray: #64748b;
@@ -1385,7 +1385,7 @@
         
         /* 改进的编辑按钮样式 */
         .edit-btn {
-            background: var(--warning);
+            background: var(--danger);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -1400,6 +1400,26 @@
         
         .edit-btn:hover {
             background: #b45309;
+            transform: translateY(-1px);
+        }
+        
+        /* 删除按钮样式 */
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .delete-btn:hover {
+            background: #b91c1c;
             transform: translateY(-1px);
         }
         
@@ -2559,18 +2579,18 @@
                     <g id="legend" transform="translate(1600,460)">
                         <rect x="0" y="0" width="320" height="200" fill="white" stroke="#333"/>
                         <text x="160" y="40" font-size="40" font-weight="bold" text-anchor="middle">車廂狀態</text>
-                        <g transform="translate(25,60)">
-                            <rect width="26" height="26" fill="#dc2626" stroke="#333"/>
-                            <text x="40" y="19" font-size="30">等待</text>
-                        </g>
-                        <g transform="translate(25,95)">
-                            <rect width="26" height="26" fill="#d97706" stroke="#333"/>
-                            <text x="40" y="19" font-size="30">救援中</text>
-                        </g>
-                        <g transform="translate(25,130)">
-                            <rect width="26" height="26" fill="#059669" stroke="#333"/>
-                            <text x="40" y="19" font-size="30">已著陸</text>
-                        </g>
+<g transform="translate(25,60)">
+    <rect width="26" height="26" fill="#FF0000" stroke="#333"/> <!-- 改為純紅色 -->
+    <text x="40" y="19" font-size="30">等待</text>
+</g>
+<g transform="translate(25,95)">
+    <rect width="26" height="26" fill="#00eeff" stroke="#333"/> <!-- 改為純黃色 -->
+    <text x="40" y="19" font-size="30">救援中</text>
+</g>
+<g transform="translate(25,130)">
+    <rect width="26" height="26" fill="#00FF00" stroke="#333"/> <!-- 改為純綠色 -->
+    <text x="40" y="19" font-size="30">已著陸</text>
+</g>
                     </g>
                 </svg>
                 
@@ -2987,6 +3007,13 @@
                     </button>
                     <button type="button" class="btn btn-danger btn-block" onclick="closeEditModal()">
                         <i class="fas fa-times"></i> 取消
+                    </button>
+                </div>
+                
+                <!-- 新增删除按钮 -->
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <button type="button" class="delete-btn btn-block" onclick="deleteRecordFromEdit()">
+                        <i class="fas fa-trash"></i> 刪除此記錄
                     </button>
                 </div>
             </form>
@@ -4828,21 +4855,33 @@
         }
         
         // 修改載入記錄函數 - 改善編號系統
-        async function loadRecords() {
-            try {
-                showLoader();
-                const snapshot = await db.collection('guests')
-                    .orderBy('createdAt', 'desc')
-                    .get();
-                
-                const recordsList = document.getElementById('records-list');
-                if (!recordsList) {
-                    console.error('records-list element not found');
-                    hideLoader();
-                    return;
-                }
-                
-                recordsList.innerHTML = '';
+// 修復：載入記錄函數 - 確保表格始終可見
+// 修復：載入記錄函數 - 確保表格始終可見
+async function loadRecords() {
+    try {
+        showLoader();
+        
+        // 確保必要的DOM元素存在且可見
+        const recordsTable = document.getElementById('records-table');
+        const recordsList = document.getElementById('records-list');
+        const dashboardContent = document.getElementById('dashboard-content');
+        
+        if (!recordsList || !recordsTable || !dashboardContent) {
+            console.error('必要的DOM元素未找到');
+            hideLoader();
+            return;
+        }
+        
+        // 強制顯示關鍵元素
+        recordsTable.style.display = 'block';
+        dashboardContent.style.display = 'block';
+        recordsList.style.display = 'table-row-group';
+        
+        const snapshot = await db.collection('guests')
+            .orderBy('createdAt', 'desc')
+            .get();
+        
+        recordsList.innerHTML = '';
                 
                 let total = 0, completed = 0, pending = 0;
                 let greenCount = 0, yellowCount = 0, redCount = 0, blackCount = 0;
@@ -4915,28 +4954,158 @@ allRecords.forEach(record => {
 });
                 
                 // 更新統計數字
-                const totalRecordsElem = document.getElementById('totalRecords');
-                const completedRecordsElem = document.getElementById('completedRecords');
-                const pendingRecordsElem = document.getElementById('pendingRecords');
+       // 更新統計數字
+        updateDashboardStats(total, completed, pending, greenCount, yellowCount, redCount, blackCount);
+        
+    } catch (error) {
+        console.error('載入記錄失敗:', error);
+        showMessage('dashboard-section', '載入記錄失敗: ' + error.message, 'error');
+        
+        // 即使出錯也要確保界面可見
+        const recordsTable = document.getElementById('records-table');
+        const dashboardContent = document.getElementById('dashboard-content');
+        if (recordsTable) recordsTable.style.display = 'block';
+        if (dashboardContent) dashboardContent.style.display = 'block';
+    } finally {
+        hideLoader();
+    }
+}
+
+// 新增：輔助函數 - 更新儀表板統計
+function updateDashboardStats(total, completed, pending, greenCount, yellowCount, redCount, blackCount) {
+    const totalRecordsElem = document.getElementById('totalRecords');
+    const completedRecordsElem = document.getElementById('completedRecords');
+    const pendingRecordsElem = document.getElementById('pendingRecords');
+    
+    if (totalRecordsElem) totalRecordsElem.textContent = total;
+    if (completedRecordsElem) completedRecordsElem.textContent = completed;
+    if (pendingRecordsElem) pendingRecordsElem.textContent = pending;
+    
+    // 更新健康狀況統計
+    const greenCountElem = document.getElementById('green-count');
+    const yellowCountElem = document.getElementById('yellow-count');
+    const redCountElem = document.getElementById('red-count');
+    const blackCountElem = document.getElementById('black-count');
+    
+    if (greenCountElem) greenCountElem.textContent = greenCount;
+    if (yellowCountElem) yellowCountElem.textContent = yellowCount;
+    if (redCountElem) redCountElem.textContent = redCount;
+    if (blackCountElem) blackCountElem.textContent = blackCount;
+}
+        
+        // 新增：删除记录功能
+ // 新增：删除记录功能
+// 修復：刪除記錄功能 - 確保刪除後表格不消失
+async function deleteRecord(docId) {
+    if (!confirm('確定要刪除此記錄嗎？此操作無法復原！')) {
+        return;
+    }
+    
+    try {
+        showLoader();
+        await db.collection('guests').doc(docId).delete();
+        
+        showMessage('dashboard-section', '記錄刪除成功！', 'success');
+        
+        // 更新救援地圖
+        updateRescueMapFromFirestore();
+        
+        // 立即重新載入記錄，確保界面不消失
+        await loadRecords();
+        
+    } catch (error) {
+        console.error('刪除記錄失敗:', error);
+        showMessage('dashboard-section', '刪除記錄失敗: ' + error.message, 'error');
+        
+        // 即使出錯也要確保界面可見
+        const recordsTable = document.getElementById('records-table');
+        const dashboardContent = document.getElementById('dashboard-content');
+        if (recordsTable) recordsTable.style.display = 'block';
+        if (dashboardContent) dashboardContent.style.display = 'block';
+    } finally {
+        hideLoader();
+    }
+}
+        
+        // 新增：从编辑表单删除记录
+      // 修復：从编辑表单删除记录
+async function deleteRecordFromEdit() {
+    const docId = document.getElementById('edit-docId').value;
+    
+    if (!docId) {
+        showMessage('edit-message', '無效的記錄ID', 'error');
+        return;
+    }
+    
+    if (!confirm('確定要刪除此記錄嗎？此操作無法復原！')) {
+        return;
+    }
+    
+    try {
+        showLoader();
+        await db.collection('guests').doc(docId).delete();
+        
+        showMessage('edit-message', '記錄刪除成功！', 'success');
+        
+        // 更新救援地圖
+        updateRescueMapFromFirestore();
+        
+        // 立即關閉編輯模態框並重新加載記錄
+        closeEditModal();
+        await loadRecords();
+        
+    } catch (error) {
+        console.error('刪除記錄失敗:', error);
+        showMessage('edit-message', '刪除記錄失敗: ' + error.message, 'error');
+    } finally {
+        hideLoader();
+    }
+}
+        
+        // 新增：从救援地图删除组别记录
+        async function deleteGroupRecord() {
+            const docId = document.getElementById('groupDetailDocId').value;
+            
+            if (!docId) {
+                alert('無法找到記錄ID，無法刪除');
+                return;
+            }
+            
+            if (!confirm('確定要刪除此組別記錄嗎？此操作無法復原！')) {
+                return;
+            }
+            
+            try {
+                showLoader();
+                await db.collection('guests').doc(docId).delete();
                 
-                if (totalRecordsElem) totalRecordsElem.textContent = total;
-                if (completedRecordsElem) completedRecordsElem.textContent = completed;
-                if (pendingRecordsElem) pendingRecordsElem.textContent = pending;
+                alert('組別記錄刪除成功！');
                 
-                // 更新健康狀況統計
-                const greenCountElem = document.getElementById('green-count');
-                const yellowCountElem = document.getElementById('yellow-count');
-                const redCountElem = document.getElementById('red-count');
-                const blackCountElem = document.getElementById('black-count');
+                // 更新救援地圖
+                updateRescueMapFromFirestore();
                 
-                if (greenCountElem) greenCountElem.textContent = greenCount;
-                if (yellowCountElem) yellowCountElem.textContent = yellowCount;
-                if (redCountElem) redCountElem.textContent = redCount;
-                if (blackCountElem) blackCountElem.textContent = blackCount;
+                // 关闭组别详情模态框
+                closeGroupDetailModal();
+                
+                // 如果当前有打开的车厢表单，重新加载组别列表
+                if (currentCabin) {
+                    setTimeout(async () => {
+                        try {
+                            if (typeof loadGroupList === 'function') {
+                                await loadGroupList(currentCabin);
+                            }
+                            if (typeof loadGroupStatus === 'function') {
+                                await loadGroupStatus(currentCabin);
+                            }
+                        } catch (error) {
+                            console.error('更新组别列表失败:', error);
+                        }
+                    }, 100);
+                }
                 
             } catch (error) {
-                console.error('載入記錄失敗:', error);
-                showMessage('dashboard-section', '載入記錄失敗: ' + error.message, 'error');
+                console.error('刪除組別記錄失敗:', error);
+                alert('刪除失敗: ' + error.message);
             } finally {
                 hideLoader();
             }
@@ -5633,7 +5802,7 @@ function addClearHighlightButton() {
         clearBtn.id = "clearHighlightBtn";
         clearBtn.textContent = "清除搜尋";
         clearBtn.onclick = clearCabinHighlight;
-        clearBtn.style.background = "var(--warning)";
+        clearBtn.style.background = "var(--danger)";
         clearBtn.style.color = "white";
         clearBtn.style.border = "none";
         clearBtn.style.padding = "8px 12px";
@@ -5969,49 +6138,85 @@ window.loadGroupList = async function(cabin) {
 };
             
             // 創建組別項目
-            function createGroupItem(guestData, docId) {
-                const groupItem = document.createElement('div');
-                groupItem.className = 'group-item';
-                groupItem.setAttribute('data-doc-id', docId);
-                
-                // 使用新的狀態判斷函數
-                const groupStatus = getGroupRescueStatus(guestData);
-                let statusText = '';
-                let statusClass = '';
-                
-                switch(groupStatus) {
-                    case 'landed':
-                        statusText = '已著陸';
-                        statusClass = 'group-status-landed';
-                        break;
-                    case 'rescuing':
-                        statusText = '救援中';
-                        statusClass = 'group-status-rescuing';
-                        break;
-                    case 'waiting':
-                        statusText = '等待救援';
-                        statusClass = 'group-status-waiting';
-                        break;
-                }
-                
-                groupItem.innerHTML = `
-                    <div class="group-item-info">
-                        <strong>第${guestData.groupNumber}組</strong>
-                        <div style="font-size: 0.9rem; color: #666;">
-                            ${guestData.guestName || '未提供姓名'} - 
-                            <span class="group-status-badge ${statusClass}">${statusText}</span>
-                        </div>
-                        ${guestData.healthStatus ? `<div style="font-size: 0.8rem; color: #888;">${guestData.healthStatus}</div>` : ''}
-                    </div>
-                    <div class="group-item-actions">
-                        <button type="button" class="group-action-btn edit" onclick="editGroup('${docId}')" title="編輯">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
-                `;
-                
-                return groupItem;
-            }
+            // 修復：創建組別項目 - 修復刪除按鈕事件
+function createGroupItem(guestData, docId) {
+    const groupItem = document.createElement('div');
+    groupItem.className = 'group-item';
+    groupItem.setAttribute('data-doc-id', docId);
+    
+    // 使用新的狀態判斷函數
+    const groupStatus = getGroupRescueStatus(guestData);
+    let statusText = '';
+    let statusClass = '';
+    
+    switch(groupStatus) {
+        case 'landed':
+            statusText = '已著陸';
+            statusClass = 'group-status-landed';
+            break;
+        case 'rescuing':
+            statusText = '救援中';
+            statusClass = 'group-status-rescuing';
+            break;
+        case 'waiting':
+            statusText = '等待救援';
+            statusClass = 'group-status-waiting';
+            break;
+    }
+    
+    groupItem.innerHTML = `
+        <div class="group-item-info">
+            <strong>第${guestData.groupNumber}組</strong>
+            <div style="font-size: 0.9rem; color: #666;">
+                ${guestData.guestName || '未提供姓名'} - 
+                <span class="group-status-badge ${statusClass}">${statusText}</span>
+            </div>
+            ${guestData.healthStatus ? `<div style="font-size: 0.8rem; color: #888;">${guestData.healthStatus}</div>` : ''}
+        </div>
+        <div class="group-item-actions">
+            <button type="button" class="group-action-btn edit" onclick="editGroup('${docId}')" title="編輯">
+                <i class="fas fa-edit"></i>
+            </button>
+            <!-- 修復：刪除按鈕使用正確的函數名稱 -->
+            <button type="button" class="group-action-btn delete" onclick="deleteGroupFromList('${docId}')" title="刪除" style="background: var(--danger);">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    return groupItem;
+}
+           // 新增：从组别列表删除记录
+async function deleteGroupFromList(docId) {
+    if (!confirm('確定要刪除此組別記錄嗎？此操作無法復原！')) {
+        return;
+    }
+    
+    try {
+        showLoader();
+        await db.collection('guests').doc(docId).delete();
+        
+        // 更新救援地圖
+        updateRescueMapFromFirestore();
+        
+        // 重新載入組別列表
+        if (currentCabin) {
+            await loadGroupList(currentCabin);
+            await loadGroupStatus(currentCabin);
+        }
+        
+        alert('組別記錄刪除成功！');
+        
+    } catch (error) {
+        console.error('刪除組別記錄失敗:', error);
+        alert('刪除失敗: ' + error.message);
+    } finally {
+        hideLoader();
+    }
+}
+
+// 確保函數在全局作用域中可用
+window.deleteGroupFromList = deleteGroupFromList;
             
             // 編輯組別
             window.editGroup = function(docId) {
