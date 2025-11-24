@@ -21,7 +21,7 @@
             --secondary: #059669;
             --secondary-dark: #047857;
     --danger: #FF0000; /* 紅色改為純紅色 */
-    --warning: #00eeff; /* 黃色改為純黃色 */
+    --warning: #ffee00; /* 黃色改為純黃色 */
     --success: #00FF00; /* 綠色改為純綠色 */
             --light: #f8fafc;
             --dark: #1e293b;
@@ -737,11 +737,17 @@
             margin-bottom: 5px;
         }
         
-        /* 改进的救援地图样式 */
-        #rescue-map-section {
-            overflow: hidden;
-        }
-        
+ #rescue-map-section {
+    overflow: hidden; /* 防止內容溢出 */
+    max-width: 100%;
+    position: relative;
+}
+#rescue-map-content {
+    display: block;
+    width: 100%;
+    overflow: auto; /* 允許滾動查看完整地圖 */
+}        
+
         .rescue-map-toolbar {
             display: flex;
             justify-content: space-between;
@@ -911,7 +917,14 @@
     border: 1px solid #e2e8f0;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    min-width: 1800px; /* 確保最小寬度 */
+    max-width: 100%; /* 確保不超過容器寬度 */
+    overflow: visible; /* 確保內容可見 */
+}
+.rescue-map-scroll-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-bottom: 20px;
 }
         /* 移動端適配調整 */
 @media (max-width: 768px) {
@@ -1099,14 +1112,49 @@
             fill: var(--success);
         }
         
-       .seq-label {
-    font-size: 32px; /* 從20px增加到24px */
+/* 修改車廂號碼標籤，確保長數字也能顯示 */
+.seq-label {
+    font-size: 24px; /* 基礎字體大小 */
     font-weight: bold;
     text-anchor: middle;
     dominant-baseline: middle;
-    fill: #111; /* 確保文字顏色深色 */
-    pointer-events: none; /* 防止文字阻擋點擊 */
-    user-select: none; /* 防止文字被選擇 */
+    fill: #111;
+    pointer-events: none;
+    user-select: none;
+    transition: font-size 0.2s ease; /* 添加過渡效果 */
+}
+/* 針對長數字自動縮小字體 */
+.seq-label[textLength="4"] {
+    font-size: 20px; /* 4位數字稍小 */
+}
+
+.seq-label[textLength="5"] {
+    font-size: 18px; /* 5位數字更小 */
+}
+
+.seq-label[textLength="6"] {
+    font-size: 16px; /* 6位數字最小 */
+}
+
+/* 增強文字對比度 */
+.seq-label {
+    text-shadow: 
+        2px 2px 4px rgba(255,255,255,0.8),
+        -2px -2px 4px rgba(255,255,255,0.8),
+        2px -2px 4px rgba(255,255,255,0.8),
+        -2px 2px 4px rgba(255,255,255,0.8);
+}
+
+/* 彩色狀態下的文字對比度 */
+.status-red .seq-label,
+.status-yellow .seq-label,
+.status-green .seq-label {
+    fill: white;
+    text-shadow: 
+        2px 2px 4px rgba(0,0,0,0.8),
+        -2px -2px 4px rgba(0,0,0,0.8),
+        2px -2px 4px rgba(0,0,0,0.8),
+        -2px 2px 4px rgba(0,0,0,0.8);
 }
         
         .cabin-highlight polygon {
@@ -1738,17 +1786,62 @@
                 max-width: 300px;
             }
             
-            /* 优化救援地图控制项 */
-            #controls {
-                padding: 12px;
-                gap: 8px;
-            }
-            
-            #controls textarea,
-            #controls input[type="text"] {
-                min-width: 100%;
-                font-size: 16px;
-            }
+/* 修復控制欄響應式問題 */
+#controls {
+    padding: 16px;
+    background: #fff;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 15px;
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 100%; /* 確保不超過容器 */
+    box-sizing: border-box;
+    overflow: visible; /* 確保內容可見 */
+}
+
+/* 控制欄內元素自適應 */
+#controls textarea {
+    flex: 1;
+    min-width: 150px; /* 減小最小寬度 */
+    max-width: 250px; /* 減小最大寬度 */
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--border-radius-sm);
+    resize: vertical;
+    transition: var(--transition);
+    box-sizing: border-box;
+}
+
+#controls input[type="text"] {
+    min-width: 120px; /* 減小最小寬度 */
+    max-width: 180px; /* 減小最大寬度 */
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+    box-sizing: border-box;
+}
+
+#controls button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 10px 12px; /* 減小padding */
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 100px; /* 減小按鈕最大寬度 */
+    font-size: 14px; /* 減小字體 */
+}
             
             #map {
                 height: 400px;
@@ -1840,7 +1933,109 @@
                 max-width: 95%;
             }
         }
-        
+        /* 增強移動端適配 */
+@media (max-width: 1200px) {
+    /* 中等屏幕適配 */
+    #map {
+        height: 600px; /* 減小高度 */
+    }
+    
+    .cabin polygon {
+        transform: scale(1.4); /* 中等屏幕車廂稍小 */
+    }
+    
+    .seq-label {
+        font-size: 28px; /* 中等屏幕字體稍小 */
+    }
+}
+
+@media (max-width: 992px) {
+    /* 平板適配 */
+    #map {
+        height: 500px;
+    }
+    
+    .cabin polygon {
+        transform: scale(1.2);
+    }
+    
+    .seq-label {
+        font-size: 24px;
+    }
+    
+    /* 控制欄改為垂直佈局 */
+    #controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #controls textarea,
+    #controls input[type="text"] {
+        max-width: 100%;
+        min-width: 100%;
+    }
+    
+    #controls button {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    /* 移動端適配 */
+    #map {
+        height: 400px;
+    }
+    
+    .cabin polygon {
+        transform: scale(1.0); /* 移動端恢復原始大小 */
+    }
+    
+    .seq-label {
+        font-size: 20px;
+    }
+    
+    /* 摘要區域垂直佈局 */
+    .summary-enhanced {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .status-counter {
+        min-width: 100%;
+    }
+    
+    /* 圖例位置調整 */
+    #legend {
+        transform: translate(20px, 460px) !important; /* 移動到左側 */
+    }
+}
+
+@media (max-width: 480px) {
+    /* 小屏幕手機適配 */
+    #map {
+        height: 350px;
+    }
+    
+    .cabin polygon {
+        transform: scale(0.9); /* 進一步縮小 */
+    }
+    
+    .seq-label {
+        font-size: 18px;
+    }
+    
+    /* 進一步壓縮控制欄 */
+    #controls {
+        padding: 10px;
+        gap: 8px;
+    }
+    
+    #controls button {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+}
         /* 小屏幕手机优化 */
         @media (max-width: 480px) {
             .container {
@@ -2615,7 +2810,7 @@
     <text x="40" y="19" font-size="30">等待</text>
 </g>
 <g transform="translate(25,95)">
-    <rect width="26" height="26" fill="#00eeff" stroke="#333"/> <!-- 改為純黃色 -->
+    <rect width="26" height="26" fill="#ffee00" stroke="#333"/> <!-- 改為純黃色 -->
     <text x="40" y="19" font-size="30">救援中</text>
 </g>
 <g transform="translate(25,130)">
